@@ -1,11 +1,6 @@
-"""
-搜索路由模块
-
-该模块包含所有与搜索相关的路由和业务逻辑，包括流式和非流式搜索接口。
-"""
-
 import time
 from langgraph.graph import StateGraph, START, END
+from langgraph.types import Command
 from typing_extensions import TypedDict
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, AIMessage,AnyMessage,messages_to_dict,messages_from_dict,message_to_dict
@@ -17,12 +12,13 @@ from pydantic import BaseModel, Field
 from enum import Enum
 import os
 import logging
-from typing import AsyncGenerator, NotRequired,Annotated
+from typing import AsyncGenerator, NotRequired,Annotated,Literal
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 import json
 from tavily import TavilyClient
 from dotenv import load_dotenv
+from ..utils.prompts import clarify_with_user_instructions
 from ..utils.constants import DEFAULT_SEARCH_MODEL_NAME, MAX_SEARCH_LOOP, SIMPLE_SYSTEM_PROMPT, DETAILED_SYSTEM_PROMPT, QWEN_API_KEY, QWEN_API_BASE_URL, SEARCH_MODEL_NAME, TAVILY_API_KEY, ERROR_QWEN_API_KEY_MISSING, ERROR_QWEN_API_BASE_URL_MISSING, ERROR_TAVILY_API_KEY_MISSING, ERROR_QUERY_EMPTY,ERROR_MESSAGES_NOT_LIST, ANALYZE_NEED_WEB_SEARCH_PROMPT, GENERATE_SEARCH_QUERY_PROMPT, EVALUATE_SEARCH_RESULTS_PROMPT
 from ..utils.helpers import send_node_execution_update, send_stream_message_update, send_messages_update
 
@@ -49,7 +45,7 @@ if not tavily_api_key:
     
 tavily_client = TavilyClient(api_key=tavily_api_key)
 
-llm = ChatOpenAI(model=model_name, api_key=api_key, base_url=base_url, temperature=0.01)
+llm = ChatOpenAI(model=model_name, api_key=api_key, base_url=base_url, temperature=0.7)
 
 # 简单的系统提示，用于普通对话
 system_prompt = SIMPLE_SYSTEM_PROMPT.format(current_time=time.strftime("%Y-%m-%d", time.localtime()))
@@ -102,13 +98,49 @@ class OverallState(TypedDict):
     is_sufficient: bool  # 搜索结果是否足够
     followup_search_query: str  # 后续搜索查询
 
+class ClarifyUser(BaseModel):
+    """澄清用户需求模型"""
+    need_clarification: bool = Field(
+        description="Whether the user needs to be asked a clarifying question.",
+    )
+    question: str = Field(
+        description="A question to ask the user to clarify the report scope",
+    )
+    verification: str = Field(
+        description="Verify message that we will start research after the user has provided the necessary information.",
+    )
+    
+def clarify_with_user(state: OverallState)-> Command[Literal['analyze_need_web_search','__end__']]:
+    """与用户进行交流，澄清用户的需求"""
+    # 自定义输出信息
+    send_node_execution_update('clarify_with_user', "clarify_with_user is running", 'running')
+    send_stream_message_update('clarify_with_user', "clarify_with_user is done", 'running')
+    model = llm.with_structured_output(ClarifyUser).with_retry(stop_after_attempt=3)
+    messages = state.get("messages", [])
+    messages.extend([{'role':'user','content':state['query']}])
+    response = model.invoke([{"role":"user","content":clarify_with_user_instructions.format(messages=str(messages), date=time.strftime("%Y-%m-%d", time.localtime()))}])
+    
+    # 自定义输出信息
+    send_stream_message_update('clarify_with_user', "clarify_with_user is done", 'done')
+    send_node_execution_update('clarify_with_user', "clarify_with_user is done", 'done', {"need_clarification":response.need_clarification,"question":response.question,"verification":response.verification})
+    
+    if response.need_clarification:
+        messages.extend([{'role':'assistant','content':response.question}])
+        #TODO: 发送更新UI消息的信息，这里其实只需要发送assistant的消息即可
+        send_messages_update('clarify_with_user', messages)
+        return Command(goto=END, update={"messages": messages,"query":state['query']})
+    else:
+        messages.extend([{'role':'assistant','content':response.verification}])
+        send_messages_update('clarify_with_user', messages)
+        return Command(goto="analyze_need_web_search", update={"messages": messages,"query":response.verification})
+
 
 def analyze_need_web_search(state: OverallState)-> OverallState:
     """判断是否需要进行网页搜索"""
 
     # 自定义输出信息
     send_node_execution_update('analyze_need_web_search', "analyze_need_web_search is running", 'running')
-    send_stream_message_update('analyze_need_web_search', "analyze_need_web_search is done", 'running')
+    send_stream_message_update('analyze_need_web_search', "analyze_need_web_search is running", 'running')
 
     parser = PydanticOutputParser(pydantic_object=WebSearchJudgement)
     # 获取 JSON Schema 的格式化指令
@@ -126,7 +158,7 @@ def analyze_need_web_search(state: OverallState)-> OverallState:
     
     # 自定义输出信息
     send_stream_message_update('analyze_need_web_search', "analyze_need_web_search is done", 'done')
-    send_node_execution_update('analyze_need_web_search', "analyze_need_web_search is running", 'done', {"query":state['query'],"messages":state['messages'],"isNeedWebSearch":model.isNeedWebSearch,"reason":model.reason,"confidence":model.confidence})
+    send_node_execution_update('analyze_need_web_search', "analyze_need_web_search is done", 'done', {"query":state['query'],"messages":state['messages'],"isNeedWebSearch":model.isNeedWebSearch,"reason":model.reason,"confidence":model.confidence})
 
     return {"query":state['query'],"messages":state['messages'],"isNeedWebSearch":model.isNeedWebSearch,"reason":model.reason,"confidence":model.confidence}
 
@@ -278,6 +310,7 @@ def need_next_search(state: OverallState)->str:
 workflow = StateGraph(OverallState)
 
 # 添加节点
+workflow.add_node('clarify_with_user',clarify_with_user)
 workflow.add_node("analyze_need_web_search", analyze_need_web_search)
 workflow.add_node("generate_search_query", generate_search_query)
 workflow.add_node("web_search", web_search)
@@ -286,7 +319,8 @@ workflow.add_node("assistant", assistant_node)
 
 
 # 添加普通边
-workflow.add_edge(START,"analyze_need_web_search")
+workflow.add_edge(START,"clarify_with_user")
+
 workflow.add_conditional_edges("analyze_need_web_search",need_web_search,{True: "generate_search_query", False: "assistant"})
 workflow.add_edge("generate_search_query","web_search")
 workflow.add_edge("web_search","evaluate_search_results")

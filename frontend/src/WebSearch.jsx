@@ -104,77 +104,84 @@ const CollapsiblePanel = ({ title, openStatus, children }) => {
   );
 };
 
+function renderStep(step) {
+  switch (step.node) {
+    case "analyze_need_web_search":
+      return (
+        <div className="flex flex-wrap gap-4 mt-2">
+          <RenderMarkdown
+            content={JSON.stringify({
+              query: step.data?.query,
+              isNeedWebSearch: step.data?.isNeedWebSearch,
+              reason: step.data?.reason,
+              confidence: step.data?.confidence,
+            })}
+          />
+        </div>
+      );
+    case "generate_search_query":
+      return (
+        <RenderMarkdown
+          content={JSON.stringify({
+            web_search_query: step.data?.web_search_query,
+            web_search_depth: step.data?.web_search_depth,
+            reason: step.data?.reason,
+            confidence: step.data?.confidence,
+          })}
+        />
+      );
+    case "web_search":
+      return (
+        <div className="flex flex-wrap gap-4 mt-2">
+          {step.data &&
+            step.data.web_search_results.map((search_data) => (
+              <div className="w-[calc(20%-1rem)] p-2">
+                <WebSearchCard
+                  key={search_data?.url}
+                  url={search_data?.url}
+                  title={search_data?.title}
+                  content={search_data?.content}
+                  snippet={search_data?.snippet}
+                />
+              </div>
+            ))}
+        </div>
+      );
+    case "evaluate_search_results":
+      return (
+        <div className="flex flex-wrap gap-4 mt-2">
+          <RenderMarkdown
+            content={JSON.stringify({
+              is_sufficient: step.data?.is_sufficient,
+              followup_search_query: step.data?.followup_search_query,
+              search_depth: step.data?.search_depth,
+              reason: step.data?.reason,
+              confidence: step.data?.confidence,
+            })}
+          />
+        </div>
+      );
+    case "assistant_node":
+      return (
+        <div className="font-mono max-h-20 overflow-y-auto">
+          {JSON.stringify(step.data)}
+        </div>
+      );
+    default:
+      return (
+        <div className="font-mono max-h-20 overflow-y-auto">
+          {JSON.stringify(step.data)}
+        </div>
+      );
+  }
+}
+
 //设置步骤节点的渲染内容
 function getThoughtChainContent(step) {
   if (step.status === "pending") {
     return <>{step.node} 节点正在执行...</>;
   } else {
-    return (
-      <div className="p-1 bg-white border-l-4 border-blue-400 shadow rounded-lg overflow-y-auto">
-        {step.node === "analyze_need_web_search" && (
-          <div className="flex flex-wrap gap-4 mt-2">
-            <RenderMarkdown
-              content={JSON.stringify({
-                query: step.data?.query,
-                isNeedWebSearch: step.data?.isNeedWebSearch,
-                reason: step.data?.reason,
-                confidence: step.data?.confidence,
-              })}
-            />
-          </div>
-        )}
-        {/* generate_search_query 节点 */}
-        {step.node === "generate_search_query" && (
-          <div className="flex flex-wrap gap-4 mt-2">
-            <RenderMarkdown
-              content={JSON.stringify({
-                web_search_query: step.data?.web_search_query,
-                web_search_depth: step.data?.web_search_depth,
-                reason: step.data?.reason,
-                confidence: step.data?.confidence,
-              })}
-            />
-          </div>
-        )}
-        {/* web_search 节点 */}
-        {step.node === "web_search" && (
-          <div className="flex flex-wrap gap-4 mt-2">
-            {step.data &&
-              step.data.web_search_results.map((search_data) => (
-                <div className="w-[calc(20%-1rem)] p-2">
-                  <WebSearchCard
-                    key={search_data?.url}
-                    url={search_data?.url}
-                    title={search_data?.title}
-                    content={search_data?.content}
-                    snippet={search_data?.snippet}
-                  />
-                </div>
-              ))}
-          </div>
-        )}
-        {/* evaluate_search_results 节点 */}
-        {step.node === "evaluate_search_results" && (
-          <div className="flex flex-wrap gap-4 mt-2">
-            <RenderMarkdown
-              content={JSON.stringify({
-                is_sufficient: step.data?.is_sufficient,
-                followup_search_query: step.data?.followup_search_query,
-                search_depth: step.data?.search_depth,
-                reason: step.data?.reason,
-                confidence: step.data?.confidence,
-              })}
-            />
-          </div>
-        )}
-        {/* assistant 节点 */}
-        {step.node === "assistant_node" && (
-          <div className="font-mono max-h-20 overflow-y-auto">
-            {JSON.stringify(step.data)}
-          </div>
-        )}
-      </div>
-    );
+    return renderStep(step);
   }
 }
 
@@ -242,7 +249,7 @@ const WebSearch = () => {
 
       const response = await fetch("/llm/deep/search/stream", {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ query, messages }),
