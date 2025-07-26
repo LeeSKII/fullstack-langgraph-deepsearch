@@ -1,3 +1,9 @@
+"""
+日志配置模块
+
+该模块负责配置应用程序的日志系统，包括文件日志和控制台日志。
+"""
+
 import logging
 from logging.handlers import TimedRotatingFileHandler
 
