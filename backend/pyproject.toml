@@ -1,0 +1,15 @@
+[project]
+name = "deep-search-backend"
+version = "0.1.0"
+description = "This is deep search backend, build with FastAPI、 Langchain and Langgraph."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115.13",
+    "langchain>=0.3.26",
+    "langchain-openai>=0.3.27",
+    "langgraph>=0.5.1",
+    "openai>=1.91.0",
+    "tavily-python>=0.7.9",
+    "uvicorn[standard]>=0.34.3",
+]
