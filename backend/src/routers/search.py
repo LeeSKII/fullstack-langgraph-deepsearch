@@ -1,3 +1,4 @@
+from pyexpat.errors import messages
 import time
 from langgraph.graph import StateGraph, START, END
 from langgraph.types import Command
@@ -16,6 +17,7 @@ from typing import AsyncGenerator, NotRequired,Annotated,Literal
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 import json
+from sqlalchemy import Over, over
 from tavily import TavilyClient
 from dotenv import load_dotenv
 from ..utils.prompts import clarify_with_user_instructions
@@ -84,6 +86,7 @@ class EvaluateWebSearchResult(BaseModel):
 class OverallState(TypedDict):
     """工作流状态类，用于在各个节点之间传递状态"""
     query: str  # 用户查询
+    messages: list[dict]  # 消息历史
     web_search_query: str  # 网络搜索查询
     web_search_depth: str  # 搜索深度
     web_search_results: Annotated[list[str], add]  # 搜索结果列表
@@ -91,7 +94,6 @@ class OverallState(TypedDict):
     max_search_loop: int  # 最大搜索循环次数
     search_loop: int  # 当前搜索循环次数
     response: str  # 响应内容
-    messages: list[dict]  # 消息历史
     isNeedWebSearch: bool  # 是否需要网络搜索
     reason: str  # 判断原因
     confidence: float  # 置信度
@@ -109,7 +111,40 @@ class ClarifyUser(BaseModel):
     verification: str = Field(
         description="Verify message that we will start research after the user has provided the necessary information.",
     )
+
+class AnalyzeRouter(BaseModel):
+    need_deep_research: bool = Field(
+        description="Whether the assistant needs to perform a deep research.",
+    )
+    reason: str = Field(
+        description="The reason why the question needs to perform a deep research.",
+    )
+    confidence: float = Field(
+        description="The confidence of the assistant's decision to perform a deep research. From 0 to 1.",
+    )
+
+def agent_router(state: OverallState):
+    """判断是否需要深度研究的智能路由"""
+    send_node_execution_update('agent_router', "agent_router is running", 'running')
+    send_stream_message_update('agent_router', "agent_router is done", 'running')
+    query = state.get("query", "")
+    messages = state.get("messages", [])
+    parser = PydanticOutputParser(pydantic_object=AnalyzeRouter)
+    # 获取 JSON Schema 的格式化指令
+    format_instructions = parser.get_format_instructions()
+    system_prompt = f"你是一个智能分析路由，判断用户的提问是否需要深入思考，还是可以直接回答,你给出的回答必须使用json格式，满足以下格式要求：{format_instructions}"
+    structured_output_model = llm.with_structured_output(schema=AnalyzeRouter).with_retry(stop_after_attempt=3)
+    response = structured_output_model.invoke([{'role':'system','content':system_prompt},*state['messages'],{"role":"user","content":state['query']}])
+    messages.append({"role":"user","content":query})
+    send_stream_message_update('agent_router', "agent_router is done", 'done')
+    send_node_execution_update('agent_router', "agent_router is done", 'done',response.model_dump())
     
+    if(response.need_deep_research):
+        return Command(goto="clarify_with_user", update={"messages": messages})
+    else:
+        return Command(goto="assistant", update={"messages": messages,"isNeedWebSearch":False})
+
+
 def clarify_with_user(state: OverallState)-> Command[Literal['analyze_need_web_search','__end__']]:
     """与用户进行交流，澄清用户的需求"""
     # 自定义输出信息
@@ -311,6 +346,7 @@ def need_next_search(state: OverallState)->str:
 workflow = StateGraph(OverallState)
 
 # 添加节点
+workflow.add_node('agent_router',agent_router)
 workflow.add_node('clarify_with_user',clarify_with_user)
 workflow.add_node("analyze_need_web_search", analyze_need_web_search)
 workflow.add_node("generate_search_query", generate_search_query)
@@ -320,7 +356,7 @@ workflow.add_node("assistant", assistant_node)
 
 
 # 添加普通边
-workflow.add_edge(START,"clarify_with_user")
+workflow.add_edge(START,"agent_router")
 
 workflow.add_conditional_edges("analyze_need_web_search",need_web_search,{True: "generate_search_query", False: "assistant"})
 workflow.add_edge("generate_search_query","web_search")
