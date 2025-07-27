@@ -17,6 +17,7 @@
     "markdown-it": "^14.1.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-json-view": "^1.21.3",
     "tailwindcss": "^4.1.11"
   },
   "devDependencies": {

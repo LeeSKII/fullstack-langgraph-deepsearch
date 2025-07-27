@@ -9,6 +9,7 @@ import { RobotOutlined, UserOutlined, ChromeOutlined } from "@ant-design/icons";
 // 移除未使用的 Ant Design 组件导入
 // Markdown 解析库导入
 import markdownit from "markdown-it";
+import ReactJson from "react-json-view";
 
 // 初始化 Markdown 解析器，支持 HTML 和换行
 const md = markdownit({ html: true, breaks: true });
@@ -104,30 +105,43 @@ const CollapsiblePanel = ({ title, openStatus, children }) => {
   );
 };
 
+const JsonRender = memo(({ data }) => {
+  return (
+    <ReactJson
+      name={false}
+      displayDataTypes={false}
+      src={data}
+      indentWidth={2}
+      collapsed={2}
+      sortKeys
+    />
+  );
+});
+
 function renderStep(step) {
   switch (step.node) {
     case "analyze_need_web_search":
       return (
         <div className="flex flex-wrap gap-4 mt-2">
-          <RenderMarkdown
-            content={JSON.stringify({
+          <JsonRender
+            data={{
               query: step.data?.query,
               isNeedWebSearch: step.data?.isNeedWebSearch,
               reason: step.data?.reason,
               confidence: step.data?.confidence,
-            })}
+            }}
           />
         </div>
       );
     case "generate_search_query":
       return (
-        <RenderMarkdown
-          content={JSON.stringify({
+        <JsonRender
+          data={{
             web_search_query: step.data?.web_search_query,
             web_search_depth: step.data?.web_search_depth,
             reason: step.data?.reason,
             confidence: step.data?.confidence,
-          })}
+          }}
         />
       );
     case "web_search":
@@ -150,27 +164,21 @@ function renderStep(step) {
     case "evaluate_search_results":
       return (
         <div className="flex flex-wrap gap-4 mt-2">
-          <RenderMarkdown
-            content={JSON.stringify({
+          <JsonRender
+            data={{
               is_sufficient: step.data?.is_sufficient,
               followup_search_query: step.data?.followup_search_query,
               search_depth: step.data?.search_depth,
               reason: step.data?.reason,
               confidence: step.data?.confidence,
-            })}
+            }}
           />
-        </div>
-      );
-    case "assistant_node":
-      return (
-        <div className="font-mono max-h-20 overflow-y-auto">
-          {JSON.stringify(step.data)}
         </div>
       );
     default:
       return (
-        <div className="font-mono max-h-20 overflow-y-auto">
-          {JSON.stringify(step.data)}
+        <div className="font-mono max-h-50 overflow-y-auto">
+          <JsonRender data={step.data} />
         </div>
       );
   }
