@@ -116,8 +116,9 @@ def clarify_with_user(state: OverallState)-> Command[Literal['analyze_need_web_s
     send_node_execution_update('clarify_with_user', "clarify_with_user is running", 'running')
     send_stream_message_update('clarify_with_user', "clarify_with_user is done", 'running')
     model = llm.with_structured_output(ClarifyUser).with_retry(stop_after_attempt=3)
-    messages = state.get("messages", [])
-    messages.extend([{'role':'user','content':state['query']}])
+    # state的就地更新模式
+    state['messages'].extend([{'role':'user','content':state['query']}])
+    messages = state['messages']
     response = model.invoke([{"role":"user","content":clarify_with_user_instructions.format(messages=str(messages), date=time.strftime("%Y-%m-%d", time.localtime()))}])
     
     # 自定义输出信息
