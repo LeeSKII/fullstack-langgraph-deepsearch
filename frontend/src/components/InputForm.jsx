@@ -24,16 +24,18 @@ export const InputForm = ({
   onCancel,
   isLoading,
   hasHistory,
+  onNewSearch,
+  query = "",
+  setQuery = () => {}
 }) => {
-  const [internalInputValue, setInternalInputValue] = useState("");
   const [effort, setEffort] = useState("low");
   const [model, setModel] = useState("google/gemini-2.0-flash-001");
 
   const handleInternalSubmit = (e) => {
     if (e) e.preventDefault();
-    if (!internalInputValue.trim()) return;
-    onSubmit(internalInputValue, effort, model);
-    setInternalInputValue("");
+    if (!query.trim()) return;
+    onSubmit(query, effort, model);
+    setQuery("");
   };
 
   const handleKeyDown = (e) => {
@@ -44,7 +46,7 @@ export const InputForm = ({
     }
   };
 
-  const isSubmitDisabled = !internalInputValue.trim() || isLoading;
+  const isSubmitDisabled = !query.trim() || isLoading;
 
   return (
     <form
@@ -57,8 +59,8 @@ export const InputForm = ({
         } break-words min-h-7 bg-neutral-700 px-4 pt-3 `}
       >
         <Textarea
-          value={internalInputValue}
-          onChange={(e) => setInternalInputValue(e.target.value)}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Who won the Euro 2024 and scored the most goals?"
           className={`w-full text-neutral-100 placeholder-neutral-500 resize-none border-0 focus:outline-none focus:ring-0 outline-none focus-visible:ring-0 shadow-none
@@ -170,7 +172,7 @@ export const InputForm = ({
         <Button
           className="bg-neutral-700 border-neutral-600 text-neutral-300 cursor-pointer rounded-xl rounded-t-sm pl-2 w-full sm:w-auto"
           variant="default"
-          onClick={() => window.location.reload()}
+          onClick={onNewSearch}
         >
           <SquarePen size={16} />
           New Search

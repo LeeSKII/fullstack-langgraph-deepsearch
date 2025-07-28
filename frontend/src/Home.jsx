@@ -195,7 +195,7 @@ const Home = () => {
         while ((eventEndIndex = buffer.indexOf("\n\n")) !== -1) {
           const eventData = buffer.substring(0, eventEndIndex);
           buffer = buffer.substring(eventEndIndex + 2);
-          console.log(eventData);
+          // console.log(eventData);
           processEvent(eventData);
         }
       }
@@ -246,6 +246,7 @@ const Home = () => {
     console.log("Event type:", parsed.data.type);
     if (parsed.data.type === "node_execute") {
       if (parsed.data.data.status === "running") {
+        console.log("Node running:", parsed);
         setCurrentNode(parsed.node);
         setSteps((prev) => [
           ...prev,
@@ -386,6 +387,8 @@ const Home = () => {
             handleSubmit={handleSubmit}
             onCancel={handleCancel}
             isLoading={isStreaming}
+            query={query}
+            setQuery={setQuery}
           />
         ) : error ? (
           <div className="flex flex-col items-center justify-center h-full">
@@ -411,6 +414,9 @@ const Home = () => {
             liveActivityEvents={steps}
             historicalActivities={{}}
             openStatus={openStatus}
+            onNewSearch={handleNewSearch}
+            query={query}
+            setQuery={setQuery}
           />
         )}
       </main>

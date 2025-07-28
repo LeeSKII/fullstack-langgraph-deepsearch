@@ -197,7 +197,10 @@ export function ChatMessagesView({
   onCancel,
   liveActivityEvents,
   historicalActivities,
-  openStatus
+  openStatus,
+  onNewSearch,
+  query,
+  setQuery
 }) {
   const [copiedMessageId, setCopiedMessageId] = useState(null);
 
@@ -275,6 +278,9 @@ export function ChatMessagesView({
         isLoading={isLoading}
         onCancel={onCancel}
         hasHistory={messages.length > 0}
+        onNewSearch={onNewSearch}
+        query={query}
+        setQuery={setQuery}
       />
     </div>
   );
