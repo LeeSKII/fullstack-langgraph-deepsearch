@@ -161,12 +161,9 @@ def clarify_with_user(state: OverallState)-> Command[Literal['analyze_need_web_s
     
     if response.need_clarification:
         messages.extend([{'role':'assistant','content':response.question}])
-        #TODO: 发送更新UI消息的信息，这里其实只需要发送assistant的消息即可
-        send_messages_update('clarify_with_user', messages)
         return Command(goto=END, update={"messages": messages,"query":state['query']})
     else:
         messages.extend([{'role':'assistant','content':response.verification}])
-        send_messages_update('clarify_with_user', messages)
         return Command(goto="analyze_need_web_search", update={"messages": messages,"query":response.verification})
 
 
