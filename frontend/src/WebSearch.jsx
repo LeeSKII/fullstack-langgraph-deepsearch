@@ -3,13 +3,19 @@ import { useState, useRef, useEffect, memo } from "react";
 // Ant Design X 组件导入
 import { Bubble, Sender, ThoughtChain, Welcome } from "@ant-design/x";
 // Ant Design 组件导入
-import { Typography, Card, Button } from "antd";
+import { Typography, Card, Button, Drawer, List } from "antd";
 // Ant Design 图标导入
-import { RobotOutlined, UserOutlined, ChromeOutlined } from "@ant-design/icons";
+import {
+  RobotOutlined,
+  UserOutlined,
+  ChromeOutlined,
+  HistoryOutlined,
+} from "@ant-design/icons";
 // 移除未使用的 Ant Design 组件导入
 // Markdown 解析库导入
 import markdownit from "markdown-it";
 import ReactJson from "react-json-view";
+import { v4 as uuidv4 } from "uuid";
 
 // 初始化 Markdown 解析器，支持 HTML 和换行
 const md = markdownit({ html: true, breaks: true });
@@ -202,6 +208,10 @@ const WebSearch = () => {
   const [streamMessage, setStreamMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [currentNode, setCurrentNode] = useState("");
+  const [drawerVisible, setDrawerVisible] = useState(false);
+  const [history, setHistory] = useState([]);
+  const [currentConversationId, setCurrentConversationId] = useState(null);
+  const [loadingConversationId, setLoadingConversationId] = useState(null);
   const abortControllerRef = useRef(null);
   const [openStatus, setOpenStatus] = useState(false);
 
@@ -221,6 +231,49 @@ const WebSearch = () => {
   }, [currentNode]);
 
   const handleNewSearch = () => {
+    // 保存当前对话到历史记录
+    if (messages.length > 0) {
+      const timestamp = new Date().toLocaleString();
+
+      if (currentConversationId) {
+        // 如果当前对话是从历史记录中恢复的，更新该历史记录
+        setHistory((prevHistory) => {
+          const existingIndex = prevHistory.findIndex(
+            (item) => item.id === currentConversationId
+          );
+          if (existingIndex >= 0) {
+            // 更新现有历史记录
+            const updatedHistory = [...prevHistory];
+            updatedHistory[existingIndex] = {
+              ...updatedHistory[existingIndex],
+              timestamp: timestamp,
+              messages: [...messages],
+            };
+            return updatedHistory;
+          } else {
+            // 如果没有找到现有历史记录，创建新的历史记录
+            const conversation = {
+              id: uuidv4(),
+              timestamp: timestamp,
+              messages: [...messages],
+            };
+            return [conversation, ...prevHistory];
+          }
+        });
+      } else {
+        // 如果当前对话不是从历史记录中恢复的，创建新的历史记录
+        const conversation = {
+          id: uuidv4(),
+          timestamp: timestamp,
+          messages: [...messages],
+        };
+        setHistory((prevHistory) => [conversation, ...prevHistory]);
+      }
+    }
+
+    // 清空当前恢复的对话的uuid
+    setCurrentConversationId(null);
+
     setSteps([]);
     setMessages([]);
     setStreamMessage("");
@@ -228,6 +281,25 @@ const WebSearch = () => {
     setCurrentNode("");
     setError(null);
     setQuery();
+  };
+
+  // 恢复历史对话
+  const restoreConversation = (conversation) => {
+    // 关闭Drawer
+    setDrawerVisible(false);
+
+    // 保存当前恢复的对话的uuid
+    setCurrentConversationId(conversation.id);
+
+    // 清空当前状态
+    setSteps([]);
+    setStreamMessage("");
+    setIsStreaming(false);
+    setCurrentNode("");
+    setError(null);
+
+    // 设置历史对话为当前对话
+    setMessages(conversation.messages);
   };
 
   // 开始流式传输函数
@@ -446,12 +518,64 @@ const WebSearch = () => {
         <div className="flex-1">
           <h1 className="text-3xl font-bold">Deep Search</h1>
         </div>
+        <Button
+          type="primary"
+          icon={<HistoryOutlined />}
+          onClick={() => setDrawerVisible(true)}
+        >
+          历史记录
+        </Button>
         {error && (
           <div className="text-xs text-red-600 bg-red-50 p-2 rounded mt-2">
             Error: {error}
           </div>
         )}
       </header>
+
+      {/* 历史记录Drawer */}
+      <Drawer
+        title="历史对话记录"
+        placement="left"
+        closable={true}
+        onClose={() => setDrawerVisible(false)}
+        open={drawerVisible}
+        width={400}
+      >
+        <List
+          dataSource={history}
+          renderItem={(item) => (
+            <List.Item
+              key={item.id}
+              onClick={() => {
+                restoreConversation(item);
+              }}
+              className={`cursor-pointer p-6 border rounded-xl mb-4 bg-white shadow-md hover:shadow-lg transition-all duration-300 ease-in-out ${
+                item.id === currentConversationId
+                  ? "border-blue-500 ring-2 ring-blue-200"
+                  : "border-gray-200 hover:border-blue-400"
+              }`}
+            >
+              <List.Item.Meta
+                title={
+                  <div className="flex justify-between items-center p-3">
+                    <span className="font-medium text-gray-800 truncate max-w-xs">
+                      {item.messages.length > 0 ? `${item.messages[0].content.substring(0, 20)}...` : "空对话"}
+                    </span>
+                    <span className="text-xs text-gray-500 bg-white px-2 py-1 rounded">
+                      {item.messages.length} 条消息
+                    </span>
+                  </div>
+                }
+                description={
+                  <div className="text-xs text-gray-500 mt-3 px-3">
+                    {item.timestamp}
+                  </div>
+                }
+              />
+            </List.Item>
+          )}
+        />
+      </Drawer>
 
       {/* 搜索结果展示区域 */}
       <div className="flex flex-row gap-4 h-10/12">
