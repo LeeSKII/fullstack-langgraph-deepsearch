@@ -197,9 +197,9 @@ export function ChatMessagesView({
   onCancel,
   liveActivityEvents,
   historicalActivities,
+  openStatus
 }) {
-  const [copiedMessageId, setCopiedMessageId] =
-    (useState < string) | (null > null);
+  const [copiedMessageId, setCopiedMessageId] = useState(null);
 
   const handleCopy = async (text, messageId) => {
     try {
@@ -255,7 +255,8 @@ export function ChatMessagesView({
                     <div className="text-xs">
                       <ActivityTimeline
                         processedEvents={liveActivityEvents}
-                        isLoading={true}
+                        isLoading={isLoading}
+                        openStatus={openStatus}
                       />
                     </div>
                   ) : (
