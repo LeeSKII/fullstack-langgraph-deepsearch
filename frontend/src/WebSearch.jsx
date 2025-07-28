@@ -223,6 +223,17 @@ const WebSearch = () => {
     localStorage.setItem("chatHistory", JSON.stringify(history));
   }, [history]);
 
+  // 监听messages变量的变化，在对话结束时保存记录
+  useEffect(() => {
+    // 只有在非流式传输状态下才保存记录
+    if (!isStreaming && messages.length > 0) {
+      // 检查是否是新对话（没有currentConversationId）且messages不为空
+      if (!currentConversationId) {
+        saveConversationToHistory();
+      }
+    }
+  }, [messages, isStreaming, currentConversationId]);
+
   // 清理函数：组件卸载时中断请求
   useEffect(() => {
     return () => {
@@ -238,8 +249,8 @@ const WebSearch = () => {
     }
   }, [currentNode]);
 
-  const handleNewSearch = () => {
-    // 保存当前对话到历史记录
+  // 保存当前对话到历史记录
+  const saveConversationToHistory = () => {
     if (messages.length > 0) {
       const timestamp = new Date().toLocaleString();
 
@@ -278,6 +289,11 @@ const WebSearch = () => {
         setHistory((prevHistory) => [conversation, ...prevHistory]);
       }
     }
+  };
+
+  const handleNewSearch = () => {
+    // 保存当前对话到历史记录
+    saveConversationToHistory();
 
     // 清空当前恢复的对话的uuid
     setCurrentConversationId(null);
@@ -557,7 +573,7 @@ const WebSearch = () => {
               onClick={() => {
                 restoreConversation(item);
               }}
-              className={`cursor-pointer p-6 border rounded-xl mb-4 bg-white shadow-md hover:shadow-lg transition-all duration-300 ease-in-out ${
+              className={`cursor-pointer p-3 border rounded-xl mb-4 bg-white shadow-md hover:shadow-lg transition-all duration-300 ease-in-out ${
                 item.id === currentConversationId
                   ? "border-blue-500 ring-2 ring-blue-200"
                   : "border-gray-200 hover:border-blue-400"
@@ -565,9 +581,11 @@ const WebSearch = () => {
             >
               <List.Item.Meta
                 title={
-                  <div className="flex justify-between items-center p-3">
+                  <div className="flex justify-between items-center px-3">
                     <span className="font-medium text-gray-800 truncate max-w-xs">
-                      {item.messages.length > 0 ? `${item.messages[0].content.substring(0, 20)}...` : "空对话"}
+                      {item.messages.length > 0
+                        ? `${item.messages[0].content.substring(0, 20)}...`
+                        : "空对话"}
                     </span>
                     <span className="text-xs text-gray-500 bg-white px-2 py-1 rounded">
                       {item.messages.length} 条消息
