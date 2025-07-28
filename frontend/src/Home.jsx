@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { WelcomeScreen } from "./components/WelcomeScreen";
-import { ChatMessagesView } from "@/components/ChatMessagesView";
+import { ChatMessagesView } from "./components/ChatMessagesView";
 import { Button } from "@/components/ui/button";
 import { v4 as uuidv4 } from "uuid";
 

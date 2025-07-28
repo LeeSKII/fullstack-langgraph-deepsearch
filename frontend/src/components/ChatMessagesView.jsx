@@ -155,14 +155,6 @@ const AiMessageBubble = ({
 
   return (
     <div className={`relative break-words flex flex-col`}>
-      {activityForThisBubble && activityForThisBubble.length > 0 && (
-        <div className="mb-3 border-b border-neutral-700 pb-3 text-xs">
-          <ActivityTimeline
-            processedEvents={activityForThisBubble}
-            isLoading={isLiveActivityForThisBubble}
-          />
-        </div>
-      )}
       <ReactMarkdown components={mdComponents}>
         {typeof message.content === "string"
           ? message.content
@@ -200,7 +192,7 @@ export function ChatMessagesView({
   openStatus,
   onNewSearch,
   query,
-  setQuery
+  setQuery,
 }) {
   const [copiedMessageId, setCopiedMessageId] = useState(null);
 
@@ -221,6 +213,17 @@ export function ChatMessagesView({
             const isLast = index === messages.length - 1;
             return (
               <div key={message.id || `msg-${index}`} className="space-y-3">
+                <div>
+                  {isLast && liveActivityEvents.length > 0 && (
+                    <div className="mb-4">
+                      <ActivityTimeline
+                        processedEvents={liveActivityEvents}
+                        isLoading={isLoading}
+                        openStatus={openStatus}
+                      />
+                    </div>
+                  )}
+                </div>
                 <div
                   className={`flex items-start gap-3 ${
                     message.type === "human" ? "justify-end" : ""
@@ -247,30 +250,6 @@ export function ChatMessagesView({
               </div>
             );
           })}
-          {isLoading &&
-            (messages.length === 0 ||
-              messages[messages.length - 1].type === "human") && (
-              <div className="flex items-start gap-3 mt-3">
-                {" "}
-                {/* AI message row structure */}
-                <div className="relative group max-w-[85%] md:max-w-[80%] rounded-xl p-3 shadow-sm break-words bg-neutral-800 text-neutral-100 rounded-bl-none w-full min-h-[56px]">
-                  {liveActivityEvents.length > 0 ? (
-                    <div className="text-xs">
-                      <ActivityTimeline
-                        processedEvents={liveActivityEvents}
-                        isLoading={isLoading}
-                        openStatus={openStatus}
-                      />
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-start h-full">
-                      <Loader2 className="h-5 w-5 animate-spin text-neutral-400 mr-2" />
-                      <span>Processing...</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
         </div>
       </ScrollArea>
       <InputForm
