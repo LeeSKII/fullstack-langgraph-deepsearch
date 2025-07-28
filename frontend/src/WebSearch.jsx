@@ -209,11 +209,19 @@ const WebSearch = () => {
   const [messages, setMessages] = useState([]);
   const [currentNode, setCurrentNode] = useState("");
   const [drawerVisible, setDrawerVisible] = useState(false);
-  const [history, setHistory] = useState([]);
+  const [history, setHistory] = useState(() => {
+    const savedHistory = localStorage.getItem("chatHistory");
+    return savedHistory ? JSON.parse(savedHistory) : [];
+  });
   const [currentConversationId, setCurrentConversationId] = useState(null);
   const [loadingConversationId, setLoadingConversationId] = useState(null);
   const abortControllerRef = useRef(null);
   const [openStatus, setOpenStatus] = useState(false);
+
+  // 将历史记录保存到localStorage中
+  useEffect(() => {
+    localStorage.setItem("chatHistory", JSON.stringify(history));
+  }, [history]);
 
   // 清理函数：组件卸载时中断请求
   useEffect(() => {
