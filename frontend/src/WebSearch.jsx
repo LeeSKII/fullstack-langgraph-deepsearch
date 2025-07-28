@@ -227,12 +227,9 @@ const WebSearch = () => {
   useEffect(() => {
     // 只有在非流式传输状态下才保存记录
     if (!isStreaming && messages.length > 0) {
-      // 检查是否是新对话（没有currentConversationId）且messages不为空
-      if (!currentConversationId) {
-        saveConversationToHistory();
-      }
+      saveConversationToHistory();
     }
-  }, [messages, isStreaming, currentConversationId]);
+  }, [messages, isStreaming]);
 
   // 清理函数：组件卸载时中断请求
   useEffect(() => {
@@ -317,13 +314,18 @@ const WebSearch = () => {
 
     // 清空当前状态
     setSteps([]);
-    setStreamMessage("");
     setIsStreaming(false);
     setCurrentNode("");
     setError(null);
 
     // 设置历史对话为当前对话
     setMessages(conversation.messages);
+
+    // 将最后一条assistant的消息设置为streamMessage
+    const lastAssistantMessage = conversation.messages
+      .filter((msg) => msg.role === "assistant")
+      .pop();
+    setStreamMessage(lastAssistantMessage ? lastAssistantMessage.content : "");
   };
 
   // 开始流式传输函数
