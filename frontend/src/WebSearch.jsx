@@ -642,9 +642,9 @@ const WebSearch = () => {
           )}
           {/* 临时流式消息区域，所有的mode:message类型的数据都会展示在这*/}
           {streamMessage && (
-            <div className="mb-6">
+            <div>
               <h2 className="text-xl font-semibold mb-3 text-gray-700">
-                Stream Message
+                实况信息：
               </h2>
 
               <div className="border rounded-lg p-4 bg-gray-50 min-h-[50px]">
