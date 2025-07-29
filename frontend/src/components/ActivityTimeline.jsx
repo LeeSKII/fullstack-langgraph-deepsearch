@@ -4,7 +4,7 @@ import {
   CardDescription,
   CardHeader,
 } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea } from "./ui/scroll-area";
 import {
   Loader2,
   Activity,
@@ -69,7 +69,8 @@ export function ActivityTimeline({ processedEvents, isLoading }) {
         </CardDescription>
       </CardHeader>
       {!isTimelineCollapsed && (
-        <ScrollArea className="max-h-96 overflow-y-auto">
+        // ScrollArea 需要默认高度才能触发自定义滚动条
+        <ScrollArea className="h-96 overflow-y-auto">
           <CardContent>
             {isLoading && processedEvents.length === 0 && (
               <div className="relative pl-8 pb-4">
