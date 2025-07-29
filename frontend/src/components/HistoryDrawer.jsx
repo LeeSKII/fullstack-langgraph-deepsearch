@@ -3,6 +3,12 @@ import { useState, useEffect } from "react";
 import { Trash2 } from "lucide-react";
 import { ScrollArea } from "./ui/scroll-area";
 
+const truncateTitle = (title, maxLength = 20) => {
+  if (!title) return "空对话";
+  if (title.length <= maxLength) return title;
+  return title.substring(0, maxLength) + "...";
+};
+
 export const HistoryDrawer = ({
   drawerVisible,
   setDrawerVisible,
@@ -41,13 +47,13 @@ export const HistoryDrawer = ({
                     {history.map((conversation) => (
                       <div
                         key={conversation.id}
-                        className="flex flex-row justify-between items-center p-3 rounded-lg bg-neutral-700 hover:bg-neutral-600 transition-colors duration-200 cursor-pointer"
+                        className="flex flex-row justify-between items-center p-3 rounded-lg bg-neutral-700 hover:bg-neutral-600 transition-colors duration-200 cursor-pointer w-full"
                         onClick={() => restoreConversation(conversation)}
                       >
                         <div className="flex justify-between items-start">
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium truncate">
-                              {conversation.messages[0]?.content || "空对话"}
+                              {truncateTitle(conversation.messages[0]?.content)}
                             </p>
                             <p className="text-xs text-neutral-400 mt-1">
                               {conversation.timestamp}
