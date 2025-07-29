@@ -5,6 +5,7 @@ const JsonRender = memo(({ data }) => {
   return (
     <ReactJson
       name={false}
+      theme="summerfruit"
       displayDataTypes={false}
       src={data}
       indentWidth={2}
