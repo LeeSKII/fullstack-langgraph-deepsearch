@@ -1,11 +1,13 @@
 import { Button } from "./ui/button";
 import { useState, useEffect } from "react";
+import { Trash2 } from "lucide-react";
 
 export const HistoryDrawer = ({ 
   drawerVisible, 
   setDrawerVisible, 
   history, 
-  restoreConversation 
+  restoreConversation,
+  deleteConversation
 }) => {
   return (
     <>
@@ -35,10 +37,12 @@ export const HistoryDrawer = ({
                   {history.map((conversation) => (
                     <div 
                       key={conversation.id}
-                      className="p-3 rounded-lg bg-neutral-700 hover:bg-neutral-600 cursor-pointer transition-colors duration-200"
-                      onClick={() => restoreConversation(conversation)}
+                      className="p-3 rounded-lg bg-neutral-700 hover:bg-neutral-600 transition-colors duration-200"
                     >
-                      <div className="flex justify-between items-start">
+                      <div 
+                        className="flex justify-between items-start cursor-pointer"
+                        onClick={() => restoreConversation(conversation)}
+                      >
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate">
                             {conversation.messages[0]?.content || "空对话"}
@@ -47,6 +51,19 @@ export const HistoryDrawer = ({
                             {conversation.timestamp}
                           </p>
                         </div>
+                      </div>
+                      <div className="flex justify-end mt-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-neutral-400 hover:text-red-400 hover:bg-red-500/10 p-1"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteConversation(conversation.id);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
                   ))}

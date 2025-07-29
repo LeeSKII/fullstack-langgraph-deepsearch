@@ -127,6 +127,13 @@ const Home = () => {
     setStreamMessage(lastAssistantMessage ? lastAssistantMessage.content : "");
   };
 
+  // 删除历史对话
+  const deleteConversation = (conversationId) => {
+    setHistory((prevHistory) => 
+      prevHistory.filter((conversation) => conversation.id !== conversationId)
+    );
+  };
+
   // 开始流式传输函数
   const startStream = async (inputValue, effort, model) => {
     if (!inputValue.trim()) {
@@ -392,6 +399,7 @@ const Home = () => {
         setDrawerVisible={setDrawerVisible}
         history={history}
         restoreConversation={restoreConversation}
+        deleteConversation={deleteConversation}
       />
       
       <main className="h-full w-full sm:max-w-4xl mx-auto relative">
