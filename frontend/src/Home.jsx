@@ -18,7 +18,6 @@ const Home = () => {
     return savedHistory ? JSON.parse(savedHistory) : [];
   });
   const [currentConversationId, setCurrentConversationId] = useState(null);
-  const [loadingConversationId, setLoadingConversationId] = useState(null);
   const abortControllerRef = useRef(null);
   const scrollAreaRef = useRef(null);
 

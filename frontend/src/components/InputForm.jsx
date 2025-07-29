@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "./ui/button";
 import {
   SquarePen,
   Brain,
@@ -169,7 +169,7 @@ export const InputForm = ({
           </div>
         </div>
         <Button
-          className="bg-neutral-700 border-neutral-600 text-neutral-300 cursor-pointer rounded-xl rounded-t-sm pl-2 w-full sm:w-auto"
+          className="bg-neutral-700 border-neutral-600 text-neutral-300 cursor-pointer rounded-xl rounded-t-sm pl-2 w-full sm:w-auto hover:bg-neutral-800 hover:shadow-[0_0_8px_rgba(163,163,163,0.5)] hover:shadow-neutral-400/50 transform hover:scale-105 transition-all duration-200"
           variant="default"
           onClick={onNewSearch}
         >

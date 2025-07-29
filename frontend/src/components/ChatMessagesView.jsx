@@ -159,8 +159,9 @@ const AiMessageBubble = ({
       </ReactMarkdown>
       {message.status !== "loading" && (
         <Button
-          variant="sm"
-          className={`absolute cursor-pointer bg-neutral-700 border-neutral-600 text-neutral-300 text-xs bottom-0 right-0 ${
+          variant="default"
+          size={"sm"}
+          className={`absolute cursor-pointer bg-neutral-700 border-neutral-600 text-neutral-300 bottom-0 right-0 ${
             message.content.length > 0 && isHovering ? "block" : "hidden"
           }`}
           onClick={() =>
