@@ -7,6 +7,7 @@ const JsonRender = memo(({ data }) => {
       name={false}
       theme="summerfruit"
       displayDataTypes={false}
+      enableClipboard={false}
       src={data}
       indentWidth={2}
       collapsed={2}
