@@ -41,7 +41,7 @@ export const HistoryDrawer = ({
                     {history.map((conversation) => (
                       <div
                         key={conversation.id}
-                        className="p-3 rounded-lg bg-neutral-700 hover:bg-neutral-600 transition-colors duration-200 cursor-pointer"
+                        className="flex flex-row justify-between items-center p-3 rounded-lg bg-neutral-700 hover:bg-neutral-600 transition-colors duration-200 cursor-pointer"
                         onClick={() => restoreConversation(conversation)}
                       >
                         <div className="flex justify-between items-start">
