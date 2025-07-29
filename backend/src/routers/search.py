@@ -161,6 +161,8 @@ def clarify_with_user(state: OverallState)-> Command[Literal['analyze_need_web_s
     
     if response.need_clarification:
         messages.extend([{'role':'assistant','content':response.question}])
+        # 告诉前端需要更新消息
+        send_messages_update('clarify_with_user', messages)
         return Command(goto=END, update={"messages": messages,"query":state['query']})
     else:
         messages.extend([{'role':'assistant','content':response.verification}])

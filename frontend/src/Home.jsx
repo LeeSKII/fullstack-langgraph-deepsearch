@@ -347,7 +347,6 @@ const Home = () => {
         if (parsed.mode === "messages") {
           handleMessagesEvent(parsed);
         } else if (parsed.mode === "custom") {
-          console.log("Received custom event:", parsed);
           handleCustomEvent(parsed);
         }
       } catch (e) {
