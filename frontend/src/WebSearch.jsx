@@ -343,7 +343,7 @@ const WebSearch = () => {
       return [
         ...prev,
         { role: "user", content: query },
-        { role: "assistant", content: "开始回答...", status: "loading" },
+        { role: "assistant", content: "Researching...", status: "loading" },
       ];
     });
     setStreamMessage("");

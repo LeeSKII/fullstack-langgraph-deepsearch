@@ -2,7 +2,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2, Copy, CopyCheck } from "lucide-react";
 import { InputForm } from "@/components/InputForm";
 import { Button } from "@/components/ui/button";
-import { useState, ReactNode } from "react";
+import { useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -148,41 +148,39 @@ const AiMessageBubble = ({
   handleCopy,
   copiedMessageId,
 }) => {
-  // Determine which activity events to show and if it's for a live loading message
-  const activityForThisBubble =
-    isLastMessage && isOverallLoading ? liveActivity : historicalActivity;
-  const isLiveActivityForThisBubble = isLastMessage && isOverallLoading;
-
   return (
-    <div className={`relative break-words flex flex-col`}>
+    <div className={`relative break-words flex flex-col flex-1`}>
       <ReactMarkdown components={mdComponents}>
         {typeof message.content === "string"
           ? message.content
           : JSON.stringify(message.content)}
       </ReactMarkdown>
-      <Button
-        variant="default"
-        className={`cursor-pointer bg-neutral-700 border-neutral-600 text-neutral-300 self-end ${
-          message.content.length > 0 ? "visible" : "hidden"
-        }`}
-        onClick={() =>
-          handleCopy(
-            typeof message.content === "string"
-              ? message.content
-              : JSON.stringify(message.content),
-            message.id
-          )
-        }
-      >
-        {copiedMessageId === message.id ? "Copied" : "Copy"}
-        {copiedMessageId === message.id ? <CopyCheck /> : <Copy />}
-      </Button>
+      {message.status !== "loading" && (
+        <Button
+          variant="default"
+          className={`cursor-pointer bg-neutral-700 border-neutral-600 text-neutral-300 self-end ${
+            message.content.length > 0 ? "visible" : "hidden"
+          }`}
+          onClick={() =>
+            handleCopy(
+              typeof message.content === "string"
+                ? message.content
+                : JSON.stringify(message.content),
+              message.id
+            )
+          }
+        >
+          {copiedMessageId === message.id ? "Copied" : "Copy"}
+          {copiedMessageId === message.id ? <CopyCheck /> : <Copy />}
+        </Button>
+      )}
     </div>
   );
 };
 
 export function ChatMessagesView({
   messages,
+  streamMessage,
   isLoading,
   scrollAreaRef,
   onSubmit,
@@ -195,6 +193,10 @@ export function ChatMessagesView({
   setQuery,
 }) {
   const [copiedMessageId, setCopiedMessageId] = useState(null);
+
+  // useEffect(()=>{
+
+  // },[streamMessage])
 
   const handleCopy = async (text, messageId) => {
     try {
@@ -250,6 +252,13 @@ export function ChatMessagesView({
               </div>
             );
           })}
+          {isLoading && (
+            <div className="mt-2">
+              <ReactMarkdown components={mdComponents}>
+                {streamMessage}
+              </ReactMarkdown>
+            </div>
+          )}
         </div>
       </ScrollArea>
       <InputForm

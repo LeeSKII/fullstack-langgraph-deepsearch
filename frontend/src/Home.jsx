@@ -148,7 +148,7 @@ const Home = () => {
       return [
         ...prev,
         { type: "human", content: inputValue },
-        { type: "ai", content: "开始回答...", status: "loading" },
+        { type: "ai", content: "Researching...", status: "loading" },
       ];
     });
     setStreamMessage("");
@@ -407,6 +407,7 @@ const Home = () => {
         ) : (
           <ChatMessagesView
             messages={messages}
+            streamMessage={streamMessage}
             isLoading={isStreaming}
             scrollAreaRef={scrollAreaRef}
             onSubmit={handleSubmit}

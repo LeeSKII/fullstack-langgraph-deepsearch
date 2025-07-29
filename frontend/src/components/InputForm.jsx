@@ -18,7 +18,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-
 export const InputForm = ({
   onSubmit,
   onCancel,
@@ -26,7 +25,7 @@ export const InputForm = ({
   hasHistory,
   onNewSearch,
   query = "",
-  setQuery = () => {}
+  setQuery = () => {},
 }) => {
   const [effort, setEffort] = useState("low");
   const [model, setModel] = useState("google/gemini-2.0-flash-001");
@@ -62,7 +61,7 @@ export const InputForm = ({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Who won the Euro 2024 and scored the most goals?"
+          placeholder="Searching anything you want..."
           className={`w-full text-neutral-100 placeholder-neutral-500 resize-none border-0 focus:outline-none focus:ring-0 outline-none focus-visible:ring-0 shadow-none
                         md:text-base  min-h-[48px] max-h-[200px]`}
           rows={1}
