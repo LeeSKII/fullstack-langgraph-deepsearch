@@ -1,7 +1,7 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2, Copy, CopyCheck } from "lucide-react";
 import { InputForm } from "@/components/InputForm";
-import { Button } from "@/components/ui/button";
+import { Button } from "./ui/button";
 import { useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import { cn } from "@/lib/utils";
@@ -144,8 +144,14 @@ const AiMessageBubble = ({
   handleCopy,
   copiedMessageId,
 }) => {
+  const [isHovering, setIsHovering] = useState(false);
+
   return (
-    <div className={`relative break-words flex flex-col flex-1`}>
+    <div
+      className={`relative break-words flex flex-col flex-1`}
+      onMouseEnter={() => setIsHovering(true)}
+      onMouseLeave={() => setIsHovering(false)}
+    >
       <ReactMarkdown components={mdComponents}>
         {typeof message.content === "string"
           ? message.content
@@ -153,9 +159,9 @@ const AiMessageBubble = ({
       </ReactMarkdown>
       {message.status !== "loading" && (
         <Button
-          variant="default"
-          className={`cursor-pointer bg-neutral-700 border-neutral-600 text-neutral-300 self-end ${
-            message.content.length > 0 ? "visible" : "hidden"
+          variant="sm"
+          className={`cursor-pointer bg-neutral-700 border-neutral-600 text-neutral-300 text-xs self-end ${
+            message.content.length > 0 && isHovering ? "visible" : "hidden"
           }`}
           onClick={() =>
             handleCopy(
