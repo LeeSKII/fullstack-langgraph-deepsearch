@@ -13,12 +13,12 @@ export const HistoryDrawer = ({
   return (
     <>
       {drawerVisible && (
-        <div className="fixed inset-0 z-50 flex">
+        <div className="fixed inset-0 z-20 flex">
           <div
             className="fixed inset-0"
             onClick={() => setDrawerVisible(false)}
           />
-          <div className="relative ml-auto w-full max-w-md h-full bg-neutral-850 shadow-xl overflow-y-auto">
+          <div className="relative text-white ml-auto w-full max-w-md h-full bg-neutral-900 shadow-xl overflow-y-auto">
             <div className="p-4 border-b border-neutral-700 flex justify-between items-center">
               <h2 className="text-lg font-bold">历史记录</h2>
               <Button
