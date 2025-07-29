@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "./ui/button";
 import {
   SquarePen,
@@ -29,6 +29,7 @@ export const InputForm = ({
 }) => {
   const [effort, setEffort] = useState("low");
   const [model, setModel] = useState("google/gemini-2.0-flash-001");
+  const textareaRef = useRef(null);
 
   const handleInternalSubmit = (e) => {
     if (e) e.preventDefault();
@@ -58,6 +59,7 @@ export const InputForm = ({
         } break-words min-h-7 bg-neutral-700 px-4 pt-3 `}
       >
         <Textarea
+          ref={textareaRef}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -171,7 +173,16 @@ export const InputForm = ({
         <Button
           className="bg-neutral-700 border-neutral-600 text-neutral-300 cursor-pointer rounded-xl rounded-t-sm pl-2 w-full sm:w-auto hover:bg-neutral-800 hover:shadow-[0_0_8px_rgba(163,163,163,0.5)] hover:shadow-neutral-400/50 transform hover:scale-105 transition-all duration-200"
           variant="default"
-          onClick={onNewSearch}
+          onClick={() => {
+            // 如果父组件传递了onNewSearch函数，则调用它
+            if (onNewSearch) {
+              onNewSearch();
+            }
+            // 聚焦到输入框
+            if (textareaRef.current) {
+              textareaRef.current.focus();
+            }
+          }}
         >
           <SquarePen size={16} />
           New Search
