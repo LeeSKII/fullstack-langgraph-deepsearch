@@ -7,6 +7,8 @@ import ReactMarkdown from "react-markdown";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { ActivityTimeline } from "./ActivityTimeline"; // Assuming ActivityTimeline is in the same dir or adjust path
+import remarkGfm from "remark-gfm"; //使用remark-gfm插件 渲染例如表格部分
+import rehypeRaw from "rehype-raw";//使用插件渲染markdown中的html部分
 
 // Markdown components (from former ReportView.tsx)
 const mdComponents = {
@@ -96,15 +98,42 @@ const mdComponents = {
   ),
   table: ({ className, children, ...props }) => (
     <div className="my-3 overflow-x-auto">
-      <table className={cn("border-collapse w-full", className)} {...props}>
+      <table
+        className={cn(
+          "border-collapse w-full border border-neutral-600",
+          className
+        )}
+        {...props}
+      >
         {children}
       </table>
     </div>
   ),
+  thead: ({ className, children, ...props }) => (
+    <thead className={cn("bg-neutral-8pnpm00", className)} {...props}>
+      {children}
+    </thead>
+  ),
+  tbody: ({ className, children, ...props }) => (
+    <tbody className={cn("bg-neutral-900", className)} {...props}>
+      {children}
+    </tbody>
+  ),
+  tr: ({ className, children, ...props }) => (
+    <tr
+      className={cn(
+        "hover:bg-neutral-800 border-b border-neutral-700",
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </tr>
+  ),
   th: ({ className, children, ...props }) => (
     <th
       className={cn(
-        "border border-neutral-600 px-3 py-2 text-left font-bold",
+        "border border-neutral-600 px-3 py-2 text-left font-bold bg-neutral-800",
         className
       )}
       {...props}
@@ -114,7 +143,10 @@ const mdComponents = {
   ),
   td: ({ className, children, ...props }) => (
     <td
-      className={cn("border border-neutral-600 px-3 py-2", className)}
+      className={cn(
+        "border border-neutral-600 px-3 py-2 bg-neutral-900 align-top",
+        className
+      )}
       {...props}
     >
       {children}
@@ -128,7 +160,11 @@ const HumanMessageBubble = ({ message, mdComponents }) => {
     <div
       className={`text-white rounded-3xl break-words min-h-7 bg-neutral-700 max-w-[100%] sm:max-w-[90%] px-4 pt-3 rounded-br-lg`}
     >
-      <ReactMarkdown components={mdComponents}>
+      <ReactMarkdown
+        components={mdComponents}
+        remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeRaw]}
+      >
         {typeof message.content === "string"
           ? message.content
           : JSON.stringify(message.content)}
@@ -152,7 +188,11 @@ const AiMessageBubble = ({
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
     >
-      <ReactMarkdown components={mdComponents}>
+      <ReactMarkdown
+        components={mdComponents}
+        remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeRaw]}
+      >
         {typeof message.content === "string"
           ? message.content
           : JSON.stringify(message.content)}
@@ -248,7 +288,11 @@ export function ChatMessagesView({
           })}
           {isLoading && (
             <div className="mt-2">
-              <ReactMarkdown components={mdComponents}>
+              <ReactMarkdown
+                components={mdComponents}
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeRaw]}
+              >
                 {streamMessage}
               </ReactMarkdown>
             </div>
