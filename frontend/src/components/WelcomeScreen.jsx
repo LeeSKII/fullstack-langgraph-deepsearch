@@ -1,6 +1,12 @@
 import { InputForm } from "./InputForm";
 
-export const WelcomeScreen = ({ handleSubmit, onCancel, isLoading, query, setQuery }) => (
+export const WelcomeScreen = ({
+  handleSubmit,
+  onCancel,
+  isLoading,
+  query,
+  setQuery,
+}) => (
   <div className="h-full flex flex-col items-center justify-center text-center px-4 flex-1 w-full max-w-3xl mx-auto gap-4">
     <div>
       <h1 className="text-5xl md:text-6xl font-semibold text-neutral-100 mb-3">
@@ -21,9 +27,9 @@ export const WelcomeScreen = ({ handleSubmit, onCancel, isLoading, query, setQue
       />
     </div>
     <p className="text-xs text-neutral-500">
-      Powered by Google Gemini and LangChain LangGraph.
-      <br />
-      ReWritten by LeeSki.
+      Powered by LangGraph, Fastapi and React, spirted by Google deep research.
+      {/* <br />
+      Author: LeeSki. */}
     </p>
   </div>
 );

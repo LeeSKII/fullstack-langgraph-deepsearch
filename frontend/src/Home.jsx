@@ -413,8 +413,6 @@ const Home = () => {
             onSubmit={handleSubmit}
             onCancel={handleCancel}
             liveActivityEvents={steps}
-            historicalActivities={{}}
-            openStatus={openStatus}
             onNewSearch={handleNewSearch}
             query={query}
             setQuery={setQuery}

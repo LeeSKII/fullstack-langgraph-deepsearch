@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { ActivityTimeline } from "@/components/ActivityTimeline"; // Assuming ActivityTimeline is in the same dir or adjust path
+import { ActivityTimeline } from "./ActivityTimeline"; // Assuming ActivityTimeline is in the same dir or adjust path
 
 // Markdown components (from former ReportView.tsx)
 const mdComponents = {
@@ -140,10 +140,6 @@ const HumanMessageBubble = ({ message, mdComponents }) => {
 // AiMessageBubble Component
 const AiMessageBubble = ({
   message,
-  historicalActivity,
-  liveActivity,
-  isLastMessage,
-  isOverallLoading,
   mdComponents,
   handleCopy,
   copiedMessageId,
@@ -186,17 +182,11 @@ export function ChatMessagesView({
   onSubmit,
   onCancel,
   liveActivityEvents,
-  historicalActivities,
-  openStatus,
   onNewSearch,
   query,
   setQuery,
 }) {
   const [copiedMessageId, setCopiedMessageId] = useState(null);
-
-  // useEffect(()=>{
-
-  // },[streamMessage])
 
   const handleCopy = async (text, messageId) => {
     try {
@@ -221,7 +211,6 @@ export function ChatMessagesView({
                       <ActivityTimeline
                         processedEvents={liveActivityEvents}
                         isLoading={isLoading}
-                        openStatus={openStatus}
                       />
                     </div>
                   )}
@@ -239,10 +228,6 @@ export function ChatMessagesView({
                   ) : (
                     <AiMessageBubble
                       message={message}
-                      historicalActivity={historicalActivities[message.id]}
-                      liveActivity={liveActivityEvents} // Pass global live events
-                      isLastMessage={isLast}
-                      isOverallLoading={isLoading} // Pass global loading state
                       mdComponents={mdComponents}
                       handleCopy={handleCopy}
                       copiedMessageId={copiedMessageId}
