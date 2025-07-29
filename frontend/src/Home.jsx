@@ -20,7 +20,6 @@ const Home = () => {
   const [currentConversationId, setCurrentConversationId] = useState(null);
   const [loadingConversationId, setLoadingConversationId] = useState(null);
   const abortControllerRef = useRef(null);
-  const [openStatus, setOpenStatus] = useState(false);
   const scrollAreaRef = useRef(null);
 
   // 将历史记录保存到localStorage中
@@ -44,12 +43,6 @@ const Home = () => {
       }
     };
   }, []);
-
-  useEffect(() => {
-    if (currentNode === "assistant_node") {
-      setOpenStatus(false);
-    }
-  }, [currentNode]);
 
   // 保存当前对话到历史记录
   const saveConversationToHistory = () => {
@@ -143,7 +136,6 @@ const Home = () => {
     // 重置状态
     setError(null);
     setSteps([]);
-    setOpenStatus(true);
     setMessages((prev) => {
       return [
         ...prev,

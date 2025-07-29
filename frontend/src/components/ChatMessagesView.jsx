@@ -148,7 +148,7 @@ const AiMessageBubble = ({
 
   return (
     <div
-      className={`relative break-words flex flex-col flex-1`}
+      className={`relative break-words flex flex-col flex-1 pb-3`}
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
     >
@@ -160,8 +160,8 @@ const AiMessageBubble = ({
       {message.status !== "loading" && (
         <Button
           variant="sm"
-          className={`cursor-pointer bg-neutral-700 border-neutral-600 text-neutral-300 text-xs self-end ${
-            message.content.length > 0 && isHovering ? "visible" : "hidden"
+          className={`absolute cursor-pointer bg-neutral-700 border-neutral-600 text-neutral-300 text-xs bottom-0 right-0 ${
+            message.content.length > 0 && isHovering ? "block" : "hidden"
           }`}
           onClick={() =>
             handleCopy(
@@ -172,8 +172,10 @@ const AiMessageBubble = ({
             )
           }
         >
-          {copiedMessageId === message.id ? "Copied" : "Copy"}
-          {copiedMessageId === message.id ? <CopyCheck /> : <Copy />}
+          <div className="flex items-center gap-1">
+            {copiedMessageId === message.id ? "Copied" : "Copy"}
+            {copiedMessageId === message.id ? <CopyCheck /> : <Copy />}
+          </div>
         </Button>
       )}
     </div>
