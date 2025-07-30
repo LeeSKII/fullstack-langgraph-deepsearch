@@ -48,7 +48,6 @@ export const saveConversationToHistory = (
 
 // 处理新搜索
 export const handleNewSearch = (
-  saveConversationToHistory,
   setCurrentConversationId,
   setSteps,
   setMessages,
@@ -58,9 +57,6 @@ export const handleNewSearch = (
   setError,
   setQuery
 ) => {
-  // 保存当前对话到历史记录
-  saveConversationToHistory();
-
   // 清空当前恢复的对话的uuid
   setCurrentConversationId(null);
 
@@ -244,7 +240,9 @@ export const processEvent = (
   setCurrentNode,
   setStreamMessage,
   setMessages,
-  steps
+  steps,
+  setCurrentConversationId,
+  currentConversationId
 ) => {
   const { eventType, data } = parseEventData(eventData);
 
@@ -253,6 +251,11 @@ export const processEvent = (
     handleErrorEvent(data, setError);
   } else if (eventType === "end") {
     setIsStreaming(false);
+    // 流式传输结束时设置currentConversationId，防止重复保存历史记录
+    // 只有在currentConversationId不存在时才创建新的ID
+    if (!currentConversationId) {
+      setCurrentConversationId(uuidv4());
+    }
     console.log("End event received, steps:", steps);
   } else if (data) {
     // 忽略心跳包
@@ -309,7 +312,9 @@ export const startStream = async (
   setIsStreaming,
   abortControllerRef,
   setCurrentNode,
-  steps
+  steps,
+  setCurrentConversationId,
+  currentConversationId
 ) => {
   if (!inputValue.trim()) {
     setError("查询不能为空");
@@ -379,7 +384,9 @@ export const startStream = async (
           setCurrentNode,
           setStreamMessage,
           setMessages,
-          steps
+          steps,
+          setCurrentConversationId,
+          currentConversationId
         );
       }
     }

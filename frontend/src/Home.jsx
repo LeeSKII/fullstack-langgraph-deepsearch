@@ -91,7 +91,9 @@ const Home = () => {
                       setIsStreaming,
                       abortControllerRef,
                       setCurrentNode,
-                      steps
+                      steps,
+                      setCurrentConversationId,
+                      currentConversationId
                     )
                 )
               }
@@ -147,7 +149,9 @@ const Home = () => {
                       setIsStreaming,
                       abortControllerRef,
                       setCurrentNode,
-                      steps
+                      steps,
+                      setCurrentConversationId,
+                      currentConversationId
                     )
                 )
               }
@@ -164,12 +168,6 @@ const Home = () => {
               liveActivityEvents={steps}
               onNewSearch={() =>
                 handleNewSearch(
-                  () =>
-                    saveConversationToHistory(
-                      messages,
-                      currentConversationId,
-                      setHistory
-                    ),
                   setCurrentConversationId,
                   setSteps,
                   setMessages,
