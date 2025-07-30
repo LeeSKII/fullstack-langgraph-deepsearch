@@ -91,7 +91,7 @@ export const deleteConversation = (conversationId, setHistory) => {
 };
 
 // 解析事件数据函数
-export const parseEventData = (eventData) => {
+const parseEventData = (eventData) => {
   const lines = eventData.split("\n");
   let eventType = "messages";
   let data = null;
@@ -108,7 +108,7 @@ export const parseEventData = (eventData) => {
 };
 
 // 处理错误事件函数
-export const handleErrorEvent = (data, setError) => {
+const handleErrorEvent = (data, setError) => {
   try {
     const errorData = JSON.parse(data);
     setError(errorData.error || "Unknown error");
@@ -118,14 +118,14 @@ export const handleErrorEvent = (data, setError) => {
 };
 
 // 处理消息事件函数
-export const handleMessagesEvent = (parsed, setStreamMessage) => {
+const handleMessagesEvent = (parsed, setStreamMessage) => {
   setStreamMessage((prev) => {
     return prev + parsed.data.data.content;
   });
 };
 
 // 处理custom数据，目前用来指示节点转换
-export const handleCustomEvent = (parsed, setCurrentNode, setSteps, setStreamMessage, setMessages) => {
+const handleCustomEvent = (parsed, setCurrentNode, setSteps, setStreamMessage, setMessages) => {
   console.log("Custom event from node:", parsed);
   console.log("Event type:", parsed.data.type);
   if (parsed.data.type === "node_execute") {
@@ -206,7 +206,7 @@ export const handleCustomEvent = (parsed, setCurrentNode, setSteps, setStreamMes
 };
 
 // 处理事件函数
-export const processEvent = (eventData, parseEventData, handleErrorEvent, handleMessagesEvent, handleCustomEvent, setError, setIsStreaming, setSteps, steps, setCurrentNode, setStreamMessage, setMessages) => {
+export const processEvent = (eventData, setError, setIsStreaming, setSteps, steps, setCurrentNode, setStreamMessage, setMessages) => {
   const { eventType, data } = parseEventData(eventData);
   
   // 处理不同事件类型
@@ -247,7 +247,7 @@ export const stopStream = (abortControllerRef, setIsStreaming, setMessages, stre
 };
 
 // 开始流式传输函数
-export const startStream = async (inputValue, effort, model, messages, setError, setSteps, setMessages, setStreamMessage, setIsStreaming, abortControllerRef, parseEventData, handleErrorEvent, handleMessagesEvent, handleCustomEvent, processEvent, setCurrentNode, steps) => {
+export const startStream = async (inputValue, effort, model, messages, setError, setSteps, setMessages, setStreamMessage, setIsStreaming, abortControllerRef, setCurrentNode, steps) => {
   if (!inputValue.trim()) {
     setError("查询不能为空");
     return;
@@ -308,7 +308,7 @@ export const startStream = async (inputValue, effort, model, messages, setError,
         const eventData = buffer.substring(0, eventEndIndex);
         buffer = buffer.substring(eventEndIndex + 2);
         // console.log(eventData);
-        processEvent(eventData, parseEventData, handleErrorEvent, handleMessagesEvent, handleCustomEvent, setError, setIsStreaming, setSteps, steps, setCurrentNode, setStreamMessage, setMessages);
+        processEvent(eventData, setError, setIsStreaming, setSteps, steps, setCurrentNode, setStreamMessage, setMessages);
       }
     }
   } catch (err) {

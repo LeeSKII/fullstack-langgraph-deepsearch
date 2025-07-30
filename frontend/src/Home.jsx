@@ -10,11 +10,6 @@ import {
   restoreConversation,
   deleteConversation,
   startStream,
-  parseEventData,
-  handleErrorEvent,
-  handleCustomEvent,
-  handleMessagesEvent,
-  processEvent,
   stopStream,
   handleSubmit,
   handleCancel
@@ -94,11 +89,6 @@ const Home = () => {
                   setStreamMessage,
                   setIsStreaming,
                   abortControllerRef,
-                  parseEventData,
-                  handleErrorEvent,
-                  handleMessagesEvent,
-                  handleCustomEvent,
-                  processEvent,
                   setCurrentNode,
                   steps
                 )
@@ -148,11 +138,6 @@ const Home = () => {
                   setStreamMessage,
                   setIsStreaming,
                   abortControllerRef,
-                  parseEventData,
-                  handleErrorEvent,
-                  handleMessagesEvent,
-                  handleCustomEvent,
-                  processEvent,
                   setCurrentNode,
                   steps
                 )
