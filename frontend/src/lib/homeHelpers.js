@@ -1,7 +1,11 @@
 import { v4 as uuidv4 } from "uuid";
 
 // 保存当前对话到历史记录
-export const saveConversationToHistory = (messages, currentConversationId, setHistory) => {
+export const saveConversationToHistory = (
+  messages,
+  currentConversationId,
+  setHistory
+) => {
   if (messages.length > 0) {
     const timestamp = new Date().toLocaleString();
 
@@ -43,13 +47,23 @@ export const saveConversationToHistory = (messages, currentConversationId, setHi
 };
 
 // 处理新搜索
-export const handleNewSearch = (saveConversationToHistory, messages, setCurrentConversationId, setSteps, setMessages, setStreamMessage, setIsStreaming, setCurrentNode, setError, setQuery) => {
+export const handleNewSearch = (
+  saveConversationToHistory,
+  setCurrentConversationId,
+  setSteps,
+  setMessages,
+  setStreamMessage,
+  setIsStreaming,
+  setCurrentNode,
+  setError,
+  setQuery
+) => {
   // 保存当前对话到历史记录
   saveConversationToHistory();
-  
+
   // 清空当前恢复的对话的uuid
   setCurrentConversationId(null);
-  
+
   setSteps([]);
   setMessages([]);
   setStreamMessage("");
@@ -60,22 +74,32 @@ export const handleNewSearch = (saveConversationToHistory, messages, setCurrentC
 };
 
 // 恢复历史对话
-export const restoreConversation = (conversation, setDrawerVisible, setCurrentConversationId, setSteps, setIsStreaming, setCurrentNode, setError, setMessages, setStreamMessage) => {
+export const restoreConversation = (
+  conversation,
+  setDrawerVisible,
+  setCurrentConversationId,
+  setSteps,
+  setIsStreaming,
+  setCurrentNode,
+  setError,
+  setMessages,
+  setStreamMessage
+) => {
   // 关闭Drawer
   setDrawerVisible(false);
-  
+
   // 保存当前恢复的对话的uuid
   setCurrentConversationId(conversation.id);
-  
+
   // 清空当前状态
   setSteps([]);
   setIsStreaming(false);
   setCurrentNode("");
   setError(null);
-  
+
   // 设置历史对话为当前对话
   setMessages(conversation.messages);
-  
+
   // 将最后一条assistant的消息设置为streamMessage
   const lastAssistantMessage = conversation.messages
     .filter((msg) => msg.type === "ai")
@@ -95,7 +119,7 @@ const parseEventData = (eventData) => {
   const lines = eventData.split("\n");
   let eventType = "messages";
   let data = null;
-  
+
   for (const line of lines) {
     if (line.startsWith("event:")) {
       eventType = line.replace("event:", "").trim();
@@ -103,7 +127,7 @@ const parseEventData = (eventData) => {
       data = line.replace("data:", "").trim();
     }
   }
-  
+
   return { eventType, data };
 };
 
@@ -125,7 +149,13 @@ const handleMessagesEvent = (parsed, setStreamMessage) => {
 };
 
 // 处理custom数据，目前用来指示节点转换
-const handleCustomEvent = (parsed, setCurrentNode, setSteps, setStreamMessage, setMessages) => {
+const handleCustomEvent = (
+  parsed,
+  setCurrentNode,
+  setSteps,
+  setStreamMessage,
+  setMessages
+) => {
   console.log("Custom event from node:", parsed);
   console.log("Event type:", parsed.data.type);
   if (parsed.data.type === "node_execute") {
@@ -187,7 +217,7 @@ const handleCustomEvent = (parsed, setCurrentNode, setSteps, setStreamMessage, s
       ];
     });
   }
-  
+
   // 节点有流式消息传输
   if (
     parsed.data.type === "update_stream_messages" &&
@@ -206,9 +236,18 @@ const handleCustomEvent = (parsed, setCurrentNode, setSteps, setStreamMessage, s
 };
 
 // 处理事件函数
-export const processEvent = (eventData, setError, setIsStreaming, setSteps, steps, setCurrentNode, setStreamMessage, setMessages) => {
+export const processEvent = (
+  eventData,
+  setError,
+  setIsStreaming,
+  setSteps,
+  setCurrentNode,
+  setStreamMessage,
+  setMessages,
+  steps
+) => {
   const { eventType, data } = parseEventData(eventData);
-  
+
   // 处理不同事件类型
   if (eventType === "error") {
     handleErrorEvent(data, setError);
@@ -218,14 +257,20 @@ export const processEvent = (eventData, setError, setIsStreaming, setSteps, step
   } else if (data) {
     // 忽略心跳包
     if (data === ":keep-alive") return;
-    
+
     try {
       const parsed = JSON.parse(data);
-      
+
       if (parsed.mode === "messages") {
         handleMessagesEvent(parsed, setStreamMessage);
       } else if (parsed.mode === "custom") {
-        handleCustomEvent(parsed, setCurrentNode, setSteps, setStreamMessage, setMessages);
+        handleCustomEvent(
+          parsed,
+          setCurrentNode,
+          setSteps,
+          setStreamMessage,
+          setMessages
+        );
       }
     } catch (e) {
       console.error("Failed to parse event data:", e);
@@ -234,7 +279,12 @@ export const processEvent = (eventData, setError, setIsStreaming, setSteps, step
 };
 
 // 停止流式传输函数
-export const stopStream = (abortControllerRef, setIsStreaming, setMessages, streamMessage) => {
+export const stopStream = (
+  abortControllerRef,
+  setIsStreaming,
+  setMessages,
+  streamMessage
+) => {
   if (abortControllerRef.current) {
     abortControllerRef.current.abort();
     setIsStreaming(false);
@@ -247,12 +297,25 @@ export const stopStream = (abortControllerRef, setIsStreaming, setMessages, stre
 };
 
 // 开始流式传输函数
-export const startStream = async (inputValue, effort, model, messages, setError, setSteps, setMessages, setStreamMessage, setIsStreaming, abortControllerRef, setCurrentNode, steps) => {
+export const startStream = async (
+  inputValue,
+  effort,
+  model,
+  messages,
+  setError,
+  setSteps,
+  setMessages,
+  setStreamMessage,
+  setIsStreaming,
+  abortControllerRef,
+  setCurrentNode,
+  steps
+) => {
   if (!inputValue.trim()) {
     setError("查询不能为空");
     return;
   }
-  
+
   // 重置状态
   setError(null);
   setSteps([]);
@@ -265,11 +328,11 @@ export const startStream = async (inputValue, effort, model, messages, setError,
   });
   setStreamMessage("");
   setIsStreaming(true);
-  
+
   try {
     // 创建中断控制器
     abortControllerRef.current = new AbortController();
-    
+
     const response = await fetch("/llm/deep/search/stream", {
       method: "POST",
       headers: {
@@ -278,37 +341,46 @@ export const startStream = async (inputValue, effort, model, messages, setError,
       body: JSON.stringify({ query: inputValue, messages, effort, model }),
       signal: abortControllerRef.current.signal,
     });
-    
+
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(
         `HTTP error! status: ${response.status}, message: ${errorText}`
       );
     }
-    
+
     if (!response.body) {
       throw new Error("ReadableStream not supported");
     }
-    
+
     // 创建流式读取器
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let buffer = "";
-    
+
     while (true) {
       const { value, done } = await reader.read();
       if (done) break;
-      
+
       // 解码并处理数据块
       buffer += decoder.decode(value, { stream: true });
-      
+
       // 处理完整的SSE事件 (以\n\n分隔)
       let eventEndIndex;
       while ((eventEndIndex = buffer.indexOf("\n\n")) !== -1) {
         const eventData = buffer.substring(0, eventEndIndex);
         buffer = buffer.substring(eventEndIndex + 2);
         // console.log(eventData);
-        processEvent(eventData, setError, setIsStreaming, setSteps, steps, setCurrentNode, setStreamMessage, setMessages);
+        processEvent(
+          eventData,
+          setError,
+          setIsStreaming,
+          setSteps,
+          setCurrentNode,
+          setStreamMessage,
+          setMessages,
+          steps
+        );
       }
     }
   } catch (err) {

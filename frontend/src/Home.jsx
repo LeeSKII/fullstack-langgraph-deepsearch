@@ -12,7 +12,7 @@ import {
   startStream,
   stopStream,
   handleSubmit,
-  handleCancel
+  handleCancel,
 } from "./lib/homeHelpers";
 
 const Home = () => {
@@ -54,7 +54,6 @@ const Home = () => {
     };
   }, []);
 
-
   return (
     <>
       {/* History Button */}
@@ -74,31 +73,38 @@ const Home = () => {
         <main className="h-full w-full sm:max-w-4xl mx-auto relative">
           {messages.length === 0 ? (
             <WelcomeScreen
-              handleSubmit={(inputValue, effort, model) => handleSubmit(
-                inputValue,
-                effort,
-                model,
-                (inputValue, effort, model) => startStream(
+              handleSubmit={(inputValue, effort, model) =>
+                handleSubmit(
                   inputValue,
                   effort,
                   model,
-                  messages,
-                  setError,
-                  setSteps,
-                  setMessages,
-                  setStreamMessage,
-                  setIsStreaming,
-                  abortControllerRef,
-                  setCurrentNode,
-                  steps
+                  (inputValue, effort, model) =>
+                    startStream(
+                      inputValue,
+                      effort,
+                      model,
+                      messages,
+                      setError,
+                      setSteps,
+                      setMessages,
+                      setStreamMessage,
+                      setIsStreaming,
+                      abortControllerRef,
+                      setCurrentNode,
+                      steps
+                    )
                 )
-              )}
-              onCancel={() => handleCancel(() => stopStream(
-                abortControllerRef,
-                setIsStreaming,
-                setMessages,
-                streamMessage
-              ))}
+              }
+              onCancel={() =>
+                handleCancel(() =>
+                  stopStream(
+                    abortControllerRef,
+                    setIsStreaming,
+                    setMessages,
+                    streamMessage
+                  )
+                )
+              }
               isLoading={isStreaming}
               query={query}
               setQuery={setQuery}
@@ -123,44 +129,57 @@ const Home = () => {
               streamMessage={streamMessage}
               isLoading={isStreaming}
               scrollAreaRef={scrollAreaRef}
-              onSubmit={(inputValue, effort, model) => handleSubmit(
-                inputValue,
-                effort,
-                model,
-                (inputValue, effort, model) => startStream(
+              onSubmit={(inputValue, effort, model) =>
+                handleSubmit(
                   inputValue,
                   effort,
                   model,
-                  messages,
-                  setError,
+                  (inputValue, effort, model) =>
+                    startStream(
+                      inputValue,
+                      effort,
+                      model,
+                      messages,
+                      setError,
+                      setSteps,
+                      setMessages,
+                      setStreamMessage,
+                      setIsStreaming,
+                      abortControllerRef,
+                      setCurrentNode,
+                      steps
+                    )
+                )
+              }
+              onCancel={() =>
+                handleCancel(() =>
+                  stopStream(
+                    abortControllerRef,
+                    setIsStreaming,
+                    setMessages,
+                    streamMessage
+                  )
+                )
+              }
+              liveActivityEvents={steps}
+              onNewSearch={() =>
+                handleNewSearch(
+                  () =>
+                    saveConversationToHistory(
+                      messages,
+                      currentConversationId,
+                      setHistory
+                    ),
+                  setCurrentConversationId,
                   setSteps,
                   setMessages,
                   setStreamMessage,
                   setIsStreaming,
-                  abortControllerRef,
                   setCurrentNode,
-                  steps
+                  setError,
+                  setQuery
                 )
-              )}
-              onCancel={() => handleCancel(() => stopStream(
-                abortControllerRef,
-                setIsStreaming,
-                setMessages,
-                streamMessage
-              ))}
-              liveActivityEvents={steps}
-              onNewSearch={() => handleNewSearch(
-                () => saveConversationToHistory(messages, currentConversationId, setHistory),
-                messages,
-                setCurrentConversationId,
-                setSteps,
-                setMessages,
-                setStreamMessage,
-                setIsStreaming,
-                setCurrentNode,
-                setError,
-                setQuery
-              )}
+              }
               query={query}
               setQuery={setQuery}
             />
@@ -173,21 +192,22 @@ const Home = () => {
         drawerVisible={drawerVisible}
         setDrawerVisible={setDrawerVisible}
         history={history}
-        restoreConversation={(conversation) => restoreConversation(
-          conversation,
-          setDrawerVisible,
-          setCurrentConversationId,
-          setSteps,
-          setIsStreaming,
-          setCurrentNode,
-          setError,
-          setMessages,
-          setStreamMessage
-        )}
-        deleteConversation={(conversationId) => deleteConversation(
-          conversationId,
-          setHistory
-        )}
+        restoreConversation={(conversation) =>
+          restoreConversation(
+            conversation,
+            setDrawerVisible,
+            setCurrentConversationId,
+            setSteps,
+            setIsStreaming,
+            setCurrentNode,
+            setError,
+            setMessages,
+            setStreamMessage
+          )
+        }
+        deleteConversation={(conversationId) =>
+          deleteConversation(conversationId, setHistory)
+        }
       />
     </>
   );
