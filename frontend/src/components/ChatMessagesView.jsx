@@ -179,6 +179,7 @@ const AiMessageBubble = ({
   mdComponents,
   handleCopy,
   copiedMessageId,
+  handleRetry,
 }) => {
   const [isHovering, setIsHovering] = useState(false);
 
@@ -198,26 +199,38 @@ const AiMessageBubble = ({
           : JSON.stringify(message.content)}
       </ReactMarkdown>
       {message.status !== "loading" && (
-        <Button
-          variant="default"
-          size={"sm"}
-          className={`absolute cursor-pointer bg-neutral-700 border-neutral-600 text-neutral-300 bottom-0 right-0 ${
-            message.content.length > 0 && isHovering ? "block" : "hidden"
-          }`}
-          onClick={() =>
-            handleCopy(
-              typeof message.content === "string"
-                ? message.content
-                : JSON.stringify(message.content),
-              message.id
-            )
-          }
-        >
-          <div className="flex items-center gap-1">
-            {copiedMessageId === message.id ? "Copied" : "Copy"}
-            {copiedMessageId === message.id ? <CopyCheck /> : <Copy />}
-          </div>
-        </Button>
+        <div className={`absolute bottom-0 right-0 flex gap-1 ${
+          message.content.length > 0 && isHovering ? "block" : "hidden"
+        }`}>
+          <Button
+            variant="default"
+            size={"sm"}
+            className="cursor-pointer bg-neutral-700 border-neutral-600 text-neutral-300"
+            onClick={() =>
+              handleCopy(
+                typeof message.content === "string"
+                  ? message.content
+                  : JSON.stringify(message.content),
+                message.id
+              )
+            }
+          >
+            <div className="flex items-center gap-1">
+              {copiedMessageId === message.id ? "Copied" : "Copy"}
+              {copiedMessageId === message.id ? <CopyCheck /> : <Copy />}
+            </div>
+          </Button>
+          <Button
+            variant="default"
+            size={"sm"}
+            className="cursor-pointer bg-neutral-700 border-neutral-600 text-neutral-300"
+            onClick={handleRetry}
+          >
+            <div className="flex items-center gap-1">
+              Retry
+            </div>
+          </Button>
+        </div>
       )}
     </div>
   );
@@ -234,6 +247,7 @@ export function ChatMessagesView({
   onNewSearch,
   query,
   setQuery,
+  onRetry,
 }) {
   const [copiedMessageId, setCopiedMessageId] = useState(null);
 
@@ -280,6 +294,7 @@ export function ChatMessagesView({
                       mdComponents={mdComponents}
                       handleCopy={handleCopy}
                       copiedMessageId={copiedMessageId}
+                      handleRetry={onRetry}
                     />
                   )}
                 </div>

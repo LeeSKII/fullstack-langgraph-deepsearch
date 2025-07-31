@@ -364,5 +364,6 @@ export const useChat = () => {
     handleNewSearch,
     restoreConversation,
     deleteConversation,
+    setMessages,
   };
 };

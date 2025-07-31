@@ -23,7 +23,31 @@ const Home = () => {
     handleNewSearch,
     restoreConversation,
     deleteConversation,
+    setMessages,
   } = useChat();
+
+  const handleRetry = () => {
+    // 找到最后一条人类消息
+    const lastHumanMessage = messages
+      .slice()
+      .reverse()
+      .find((msg) => msg.type === "human");
+    
+    if (lastHumanMessage) {
+      // 清理原来的最近的一条AI消息和人类消息
+      const newMessages = messages.slice(0, -2); // 移除最后两条消息（AI和人类）
+      const query = lastHumanMessage.content;
+      
+      // 更新消息状态
+      setMessages(newMessages);
+      
+      // 设置查询内容
+      setQuery(query);
+      
+      // 重新提交查询
+      handleSubmit(query);
+    }
+  };
 
   return (
     <>
@@ -76,6 +100,7 @@ const Home = () => {
               onNewSearch={handleNewSearch}
               query={query}
               setQuery={setQuery}
+              onRetry={handleRetry}
             />
           )}
         </main>
