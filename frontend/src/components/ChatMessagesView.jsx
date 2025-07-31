@@ -279,10 +279,10 @@ export function ChatMessagesView({
                 </div>
                 <div
                   className={`flex items-start gap-3 ${
-                    message.type === "human" ? "justify-end" : ""
+                    message.type === "user" ? "justify-end" : ""
                   }`}
                 >
-                  {message.type === "human" ? (
+                  {message.type === "user" ? (
                     <HumanMessageBubble
                       message={message}
                       mdComponents={mdComponents}
