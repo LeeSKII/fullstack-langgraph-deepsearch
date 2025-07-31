@@ -22,7 +22,7 @@ from .models import (
     AnalyzeRouter
 )
 from ...utils.helpers import send_node_execution_update, send_stream_message_update, send_messages_update
-from .prompts import clarify_with_user_instructions
+from .prompts import clarify_with_user_instructions,answer_instructions
 from .constants import (
     ANALYZE_NEED_WEB_SEARCH_PROMPT, 
     GENERATE_SEARCH_QUERY_PROMPT, 
@@ -281,6 +281,7 @@ def assistant_node(state: OverallState, llm: Any, system_prompt: str) -> Overall
     send_node_update('assistant_node', NodeStatus.RUNNING)
     
     query = state['query']
+    summaries = state['web_search_results']
     
     if state['isNeedWebSearch']:
         send_messages = [
@@ -288,7 +289,7 @@ def assistant_node(state: OverallState, llm: Any, system_prompt: str) -> Overall
             *state['messages'],
             {
                 "role": "user",
-                "content": f"用户提问：{state['query']}，然后系统根据该提问生成了不同角度的搜索关键字：{state['web_search_query_list']}，得到的搜索结果：{state['web_search_results']}，请根据以上信息，满足用户的需求。"
+                "content": answer_instructions.format(research_topic=query,summaries=summaries)
             }
         ]
     else:
