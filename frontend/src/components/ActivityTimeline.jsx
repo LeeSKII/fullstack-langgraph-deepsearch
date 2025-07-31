@@ -51,6 +51,38 @@ export function ActivityTimeline({ processedEvents, isLoading }) {
     return <Activity className="h-4 w-4 text-neutral-400" />;
   };
 
+  // 检查事件是否有实际数据
+  const hasEventData = (eventItem) => {
+    if (!eventItem.data) return false;
+    
+    // 对于特殊节点，即使没有数据也显示
+    if (eventItem.node === "thinking" || eventItem.node === "generating") {
+      return true;
+    }
+    
+    // 对于 web_search 节点，检查是否有 web_search_results
+    if (eventItem.node === "web_search" && eventItem.data?.web_search_results) {
+      return true;
+    }
+    
+    // 检查字符串类型数据
+    if (typeof eventItem.data === 'string') {
+      return eventItem.data.trim() !== '';
+    }
+    
+    // 检查数组类型数据
+    if (Array.isArray(eventItem.data)) {
+      return eventItem.data.length > 0;
+    }
+    
+    // 检查对象类型数据
+    if (typeof eventItem.data === 'object' && eventItem.data !== null) {
+      return Object.keys(eventItem.data).length > 0;
+    }
+    
+    return false;
+  };
+
   return (
     <Card className="border-none rounded-lg bg-neutral-700 max-h-96">
       <CardHeader>
@@ -87,90 +119,97 @@ export function ActivityTimeline({ processedEvents, isLoading }) {
             )}
             {processedEvents.length > 0 ? (
               <div className="space-y-0">
-                {processedEvents.map((eventItem, index) => (
-                  <div key={index} className="relative pl-8 pb-4">
-                    {index < processedEvents.length - 1 ||
-                    (isLoading && index === processedEvents.length - 1) ? (
-                      <div className="absolute left-3 top-3.5 h-full w-0.5 bg-neutral-600" />
-                    ) : null}
-                    <div className="absolute left-0.5 top-2 h-6 w-6 rounded-full bg-neutral-600 flex items-center justify-center ring-4 ring-neutral-700">
-                      {getEventIcon(eventItem.node, index)}
-                    </div>
-                    <div>
-                      <p className="text-sm text-neutral-200 font-medium mb-0.5">
-                        {eventItem.node}
-                      </p>
-                      <div className="text-xs text-neutral-300 leading-relaxed">
-                        {eventItem.node === "web_search" &&
-                        eventItem.data &&
-                        eventItem.data.web_search_results ? (
-                          <div className="flex flex-wrap gap-4 mt-2">
-                            {eventItem.data.web_search_results.map(
-                              (search_data) => (
-                                <div
-                                  className="w-[calc(20%-1rem)] p-2"
-                                  key={search_data.url}
-                                >
-                                  <WebSearchCard
-                                    url={search_data.url}
-                                    title={search_data.title}
-                                    content={
-                                      search_data.content || search_data.snippet
-                                    }
-                                  />
-                                </div>
-                              )
-                            )}
-                          </div>
-                        ) : eventItem.node === "analyze_need_web_search" ? (
-                          <div className="flex flex-wrap gap-4 mt-2">
+                {processedEvents.map((eventItem, index) => {
+                  // 检查是否有实际数据，如果没有则跳过显示
+                  if (!hasEventData(eventItem)) {
+                    return null;
+                  }
+                  
+                  return (
+                    <div key={index} className="relative pl-8 pb-4">
+                      {index < processedEvents.length - 1 ||
+                      (isLoading && index === processedEvents.length - 1) ? (
+                        <div className="absolute left-3 top-3.5 h-full w-0.5 bg-neutral-600" />
+                      ) : null}
+                      <div className="absolute left-0.5 top-2 h-6 w-6 rounded-full bg-neutral-600 flex items-center justify-center ring-4 ring-neutral-700">
+                        {getEventIcon(eventItem.node, index)}
+                      </div>
+                      <div>
+                        <p className="text-sm text-neutral-200 font-medium mb-0.5">
+                          {eventItem.node}
+                        </p>
+                        <div className="text-xs text-neutral-300 leading-relaxed">
+                          {eventItem.node === "web_search" &&
+                          eventItem.data &&
+                          eventItem.data.web_search_results ? (
+                            <div className="flex flex-wrap gap-4 mt-2">
+                              {eventItem.data.web_search_results.map(
+                                (search_data) => (
+                                  <div
+                                    className="w-[calc(20%-1rem)] p-2"
+                                    key={search_data.url}
+                                  >
+                                    <WebSearchCard
+                                      url={search_data.url}
+                                      title={search_data.title}
+                                      content={
+                                        search_data.content || search_data.snippet
+                                      }
+                                    />
+                                  </div>
+                                )
+                              )}
+                            </div>
+                          ) : eventItem.node === "analyze_need_web_search" ? (
+                            <div className="flex flex-wrap gap-4 mt-2">
+                              <JsonRender
+                                data={{
+                                  query: eventItem.data?.query,
+                                  isNeedWebSearch:
+                                    eventItem.data?.isNeedWebSearch,
+                                  reason: eventItem.data?.reason,
+                                  confidence: eventItem.data?.confidence,
+                                }}
+                              />
+                            </div>
+                          ) : eventItem.node === "generate_search_query" ? (
                             <JsonRender
                               data={{
-                                query: eventItem.data?.query,
-                                isNeedWebSearch:
-                                  eventItem.data?.isNeedWebSearch,
+                                web_search_query:
+                                  eventItem.data?.web_search_query,
+                                web_search_depth:
+                                  eventItem.data?.web_search_depth,
                                 reason: eventItem.data?.reason,
                                 confidence: eventItem.data?.confidence,
                               }}
                             />
-                          </div>
-                        ) : eventItem.node === "generate_search_query" ? (
-                          <JsonRender
-                            data={{
-                              web_search_query:
-                                eventItem.data?.web_search_query,
-                              web_search_depth:
-                                eventItem.data?.web_search_depth,
-                              reason: eventItem.data?.reason,
-                              confidence: eventItem.data?.confidence,
-                            }}
-                          />
-                        ) : eventItem.node === "evaluate_search_results" ? (
-                          <div className="flex flex-wrap gap-4 mt-2">
-                            <JsonRender
-                              data={{
-                                is_sufficient: eventItem.data?.is_sufficient,
-                                followup_search_query:
-                                  eventItem.data?.followup_search_query,
-                                search_depth: eventItem.data?.search_depth,
-                                reason: eventItem.data?.reason,
-                                confidence: eventItem.data?.confidence,
-                              }}
-                            />
-                          </div>
-                        ) : typeof eventItem.data === "string" ? (
-                          eventItem.data
-                        ) : Array.isArray(eventItem.data) ? (
-                          eventItem.data.join(", ")
-                        ) : eventItem.data ? (
-                          <div className="font-mono max-h-50 overflow-y-auto">
-                            <JsonRender data={eventItem.data} />
-                          </div>
-                        ) : null}
+                          ) : eventItem.node === "evaluate_search_results" ? (
+                            <div className="flex flex-wrap gap-4 mt-2">
+                              <JsonRender
+                                data={{
+                                  is_sufficient: eventItem.data?.is_sufficient,
+                                  followup_search_query:
+                                    eventItem.data?.followup_search_query,
+                                  search_depth: eventItem.data?.search_depth,
+                                  reason: eventItem.data?.reason,
+                                  confidence: eventItem.data?.confidence,
+                                }}
+                              />
+                            </div>
+                          ) : typeof eventItem.data === "string" ? (
+                            eventItem.data
+                          ) : Array.isArray(eventItem.data) ? (
+                            eventItem.data.join(", ")
+                          ) : eventItem.data ? (
+                            <div className="font-mono max-h-50 overflow-y-auto">
+                              <JsonRender data={eventItem.data} />
+                            </div>
+                          ) : null}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
                 {isLoading && processedEvents.length > 0 && (
                   <div className="relative pl-8 pb-4">
                     <div className="absolute left-0.5 top-2 h-5 w-5 rounded-full bg-neutral-600 flex items-center justify-center ring-4 ring-neutral-700">
