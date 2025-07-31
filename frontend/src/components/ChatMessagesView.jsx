@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { ActivityTimeline } from "./ActivityTimeline"; // Assuming ActivityTimeline is in the same dir or adjust path
 import remarkGfm from "remark-gfm"; //使用remark-gfm插件 渲染例如表格部分
-import rehypeRaw from "rehype-raw";//使用插件渲染markdown中的html部分
+import rehypeRaw from "rehype-raw"; //使用插件渲染markdown中的html部分
 
 // Markdown components (from former ReportView.tsx)
 const mdComponents = {
@@ -198,40 +198,39 @@ const AiMessageBubble = ({
           ? message.content
           : JSON.stringify(message.content)}
       </ReactMarkdown>
-      {message.status !== "loading" && (
-        <div className={`absolute bottom-0 right-0 flex gap-1 ${
+
+      <div
+        className={`absolute bottom-0 right-0 flex gap-1 ${
           message.content.length > 0 && isHovering ? "block" : "hidden"
-        }`}>
-          <Button
-            variant="default"
-            size={"sm"}
-            className="cursor-pointer bg-neutral-700 border-neutral-600 text-neutral-300"
-            onClick={() =>
-              handleCopy(
-                typeof message.content === "string"
-                  ? message.content
-                  : JSON.stringify(message.content),
-                message.id
-              )
-            }
-          >
-            <div className="flex items-center gap-1">
-              {copiedMessageId === message.id ? "Copied" : "Copy"}
-              {copiedMessageId === message.id ? <CopyCheck /> : <Copy />}
-            </div>
-          </Button>
-          <Button
-            variant="default"
-            size={"sm"}
-            className="cursor-pointer bg-neutral-700 border-neutral-600 text-neutral-300"
-            onClick={handleRetry}
-          >
-            <div className="flex items-center gap-1">
-              Retry
-            </div>
-          </Button>
-        </div>
-      )}
+        }`}
+      >
+        <Button
+          variant="default"
+          size={"sm"}
+          className="cursor-pointer bg-neutral-700 border-neutral-600 text-neutral-300"
+          onClick={() =>
+            handleCopy(
+              typeof message.content === "string"
+                ? message.content
+                : JSON.stringify(message.content),
+              message.id
+            )
+          }
+        >
+          <div className="flex items-center gap-1">
+            {copiedMessageId === message.id ? "Copied" : "Copy"}
+            {copiedMessageId === message.id ? <CopyCheck /> : <Copy />}
+          </div>
+        </Button>
+        <Button
+          variant="default"
+          size={"sm"}
+          className="cursor-pointer bg-neutral-700 border-neutral-600 text-neutral-300"
+          onClick={handleRetry}
+        >
+          <div className="flex items-center gap-1">Retry</div>
+        </Button>
+      </div>
     </div>
   );
 };

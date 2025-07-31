@@ -109,7 +109,7 @@ export const useChat = () => {
     setMessages(conversation.messages);
 
     const lastAssistantMessage = conversation.messages
-      .filter((msg) => msg.type === "ai")
+      .filter((msg) => msg.type === "assistant")
       .pop();
     setStreamMessage(lastAssistantMessage ? lastAssistantMessage.content : "");
   }, []);
@@ -258,7 +258,7 @@ export const useChat = () => {
       setIsStreaming(false);
       setMessages((prev) => {
         const tempArr = prev.slice(0, -1);
-        return [...tempArr, { type: "ai", content: streamMessage }];
+        return [...tempArr, { type: "assistant", content: streamMessage }];
       });
     }
   }, [streamMessage]);
@@ -274,8 +274,8 @@ export const useChat = () => {
     setSteps([]);
     setMessages((prev) => [
       ...prev,
-      { type: "human", content: inputValue },
-      { type: "ai", content: "Researching...", status: "loading" },
+      { type: "user", content: inputValue },
+      { type: "assistant", content: "Researching..." },
     ]);
     setStreamMessage("");
     setIsStreaming(true);
