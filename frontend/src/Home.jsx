@@ -1,58 +1,29 @@
-import { useState, useEffect, useRef, useCallback } from "react";
 import { WelcomeScreen } from "./components/WelcomeScreen";
 import { ChatMessagesView } from "./components/ChatMessagesView";
 import { Button } from "./components/ui/button";
 import { History } from "lucide-react";
 import { HistoryDrawer } from "./components/HistoryDrawer";
-import {
-  saveConversationToHistory,
-  handleNewSearch,
-  restoreConversation,
-  deleteConversation,
-  startStream,
-  stopStream,
-  handleSubmit,
-  handleCancel,
-} from "./lib/homeHelpers";
+import { useChat } from "./hooks/useChat";
 
 const Home = () => {
-  const [messages, setMessages] = useState([]);
-  const [query, setQuery] = useState("");
-  const [isStreaming, setIsStreaming] = useState(false);
-  const [error, setError] = useState(null);
-  const [steps, setSteps] = useState([]); //步骤，keys:node,data
-  const [streamMessage, setStreamMessage] = useState("");
-  const [currentNode, setCurrentNode] = useState("");
-  const [drawerVisible, setDrawerVisible] = useState(false);
-  const [history, setHistory] = useState(() => {
-    const savedHistory = localStorage.getItem("chatHistory");
-    return savedHistory ? JSON.parse(savedHistory) : [];
-  });
-  const [currentConversationId, setCurrentConversationId] = useState(null);
-  const abortControllerRef = useRef(null);
-  const scrollAreaRef = useRef(null);
-
-  // 将历史记录保存到localStorage中
-  useEffect(() => {
-    localStorage.setItem("chatHistory", JSON.stringify(history));
-  }, [history]);
-
-  // 监听messages变量的变化，在对话结束时保存记录
-  useEffect(() => {
-    // 只有在非流式传输状态下才保存记录
-    if (!isStreaming && messages.length > 0) {
-      saveConversationToHistory(messages, currentConversationId, setHistory);
-    }
-  }, [messages, isStreaming]);
-
-  // 清理函数：组件卸载时中断请求
-  useEffect(() => {
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
-  }, []);
+  const {
+    messages,
+    query,
+    isStreaming,
+    error,
+    steps,
+    streamMessage,
+    drawerVisible,
+    history,
+    scrollAreaRef,
+    setQuery,
+    setDrawerVisible,
+    handleSubmit,
+    handleCancel,
+    handleNewSearch,
+    restoreConversation,
+    deleteConversation,
+  } = useChat();
 
   return (
     <>
@@ -73,40 +44,8 @@ const Home = () => {
         <main className="h-full w-full sm:max-w-4xl mx-auto relative">
           {messages.length === 0 ? (
             <WelcomeScreen
-              handleSubmit={(inputValue, effort, model) =>
-                handleSubmit(
-                  inputValue,
-                  effort,
-                  model,
-                  (inputValue, effort, model) =>
-                    startStream(
-                      inputValue,
-                      effort,
-                      model,
-                      messages,
-                      setError,
-                      setSteps,
-                      setMessages,
-                      setStreamMessage,
-                      setIsStreaming,
-                      abortControllerRef,
-                      setCurrentNode,
-                      steps,
-                      setCurrentConversationId,
-                      currentConversationId
-                    )
-                )
-              }
-              onCancel={() =>
-                handleCancel(() =>
-                  stopStream(
-                    abortControllerRef,
-                    setIsStreaming,
-                    setMessages,
-                    streamMessage
-                  )
-                )
-              }
+              handleSubmit={handleSubmit}
+              onCancel={handleCancel}
               isLoading={isStreaming}
               query={query}
               setQuery={setQuery}
@@ -131,53 +70,10 @@ const Home = () => {
               streamMessage={streamMessage}
               isLoading={isStreaming}
               scrollAreaRef={scrollAreaRef}
-              onSubmit={(inputValue, effort, model) =>
-                handleSubmit(
-                  inputValue,
-                  effort,
-                  model,
-                  (inputValue, effort, model) =>
-                    startStream(
-                      inputValue,
-                      effort,
-                      model,
-                      messages,
-                      setError,
-                      setSteps,
-                      setMessages,
-                      setStreamMessage,
-                      setIsStreaming,
-                      abortControllerRef,
-                      setCurrentNode,
-                      steps,
-                      setCurrentConversationId,
-                      currentConversationId
-                    )
-                )
-              }
-              onCancel={() =>
-                handleCancel(() =>
-                  stopStream(
-                    abortControllerRef,
-                    setIsStreaming,
-                    setMessages,
-                    streamMessage
-                  )
-                )
-              }
+              onSubmit={handleSubmit}
+              onCancel={handleCancel}
               liveActivityEvents={steps}
-              onNewSearch={() =>
-                handleNewSearch(
-                  setCurrentConversationId,
-                  setSteps,
-                  setMessages,
-                  setStreamMessage,
-                  setIsStreaming,
-                  setCurrentNode,
-                  setError,
-                  setQuery
-                )
-              }
+              onNewSearch={handleNewSearch}
               query={query}
               setQuery={setQuery}
             />
@@ -190,22 +86,8 @@ const Home = () => {
         drawerVisible={drawerVisible}
         setDrawerVisible={setDrawerVisible}
         history={history}
-        restoreConversation={(conversation) =>
-          restoreConversation(
-            conversation,
-            setDrawerVisible,
-            setCurrentConversationId,
-            setSteps,
-            setIsStreaming,
-            setCurrentNode,
-            setError,
-            setMessages,
-            setStreamMessage
-          )
-        }
-        deleteConversation={(conversationId) =>
-          deleteConversation(conversationId, setHistory)
-        }
+        restoreConversation={restoreConversation}
+        deleteConversation={deleteConversation}
       />
     </>
   );
