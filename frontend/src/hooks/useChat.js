@@ -49,42 +49,45 @@ export const useChat = () => {
   }, []);
 
   // 保存当前对话到历史记录
-  const saveConversationToHistory = useCallback((messages, currentConversationId) => {
-    if (messages.length > 0) {
-      const timestamp = new Date().toLocaleString();
+  const saveConversationToHistory = useCallback(
+    (messages, currentConversationId) => {
+      if (messages.length > 0) {
+        const timestamp = new Date().toLocaleString();
 
-      if (currentConversationId) {
-        setHistory((prevHistory) => {
-          const existingIndex = prevHistory.findIndex(
-            (item) => item.id === currentConversationId
-          );
-          if (existingIndex >= 0) {
-            const updatedHistory = [...prevHistory];
-            updatedHistory[existingIndex] = {
-              ...updatedHistory[existingIndex],
-              timestamp,
-              messages: [...messages],
-            };
-            return updatedHistory;
-          } else {
-            const conversation = {
-              id: uuidv4(),
-              timestamp,
-              messages: [...messages],
-            };
-            return [conversation, ...prevHistory];
-          }
-        });
-      } else {
-        const conversation = {
-          id: uuidv4(),
-          timestamp,
-          messages: [...messages],
-        };
-        setHistory((prevHistory) => [conversation, ...prevHistory]);
+        if (currentConversationId) {
+          setHistory((prevHistory) => {
+            const existingIndex = prevHistory.findIndex(
+              (item) => item.id === currentConversationId
+            );
+            if (existingIndex >= 0) {
+              const updatedHistory = [...prevHistory];
+              updatedHistory[existingIndex] = {
+                ...updatedHistory[existingIndex],
+                timestamp,
+                messages: [...messages],
+              };
+              return updatedHistory;
+            } else {
+              const conversation = {
+                id: uuidv4(),
+                timestamp,
+                messages: [...messages],
+              };
+              return [conversation, ...prevHistory];
+            }
+          });
+        } else {
+          const conversation = {
+            id: uuidv4(),
+            timestamp,
+            messages: [...messages],
+          };
+          setHistory((prevHistory) => [conversation, ...prevHistory]);
+        }
       }
-    }
-  }, []);
+    },
+    []
+  );
 
   // 处理新搜索
   const handleNewSearch = useCallback(() => {
@@ -166,7 +169,7 @@ export const useChat = () => {
     }
 
     const timestamp = Date.now();
-    
+
     if (parsed.data.type === "node_execute") {
       if (parsed.data.data.status === "running") {
         setCurrentNode(parsed.node);
@@ -179,7 +182,7 @@ export const useChat = () => {
           },
         ]);
       }
-      
+
       if (parsed.data.data.status === "done") {
         setSteps((prev) => {
           if (prev.length === 0) {
@@ -208,10 +211,13 @@ export const useChat = () => {
     }
 
     // 处理流式消息传输和消息更新
-    if (parsed.data.type === "update_stream_messages" && parsed.data.data.status === "running") {
+    if (
+      parsed.data.type === "update_stream_messages" &&
+      parsed.data.data.status === "running"
+    ) {
       setStreamMessage("");
     }
-    
+
     if (parsed.data.type === "update_messages") {
       setMessages((prev) => [
         ...prev.slice(0, -1),
@@ -221,35 +227,45 @@ export const useChat = () => {
   }, []);
 
   // 处理事件函数
-  const processEvent = useCallback((eventData) => {
-    const { eventType, data } = parseEventData(eventData);
+  const processEvent = useCallback(
+    (eventData) => {
+      const { eventType, data } = parseEventData(eventData);
 
-    if (eventType === "error") {
-      handleErrorEvent(data);
-    } else if (eventType === "end") {
-      setIsStreaming(false);
-      if (!currentConversationId) {
-        setCurrentConversationId(uuidv4());
-      }
-      if (process.env.NODE_ENV === "development") {
-        console.log("End event received, steps:", steps);
-      }
-    } else if (data) {
-      if (data === ":keep-alive") return;
-
-      try {
-        const parsed = JSON.parse(data);
-
-        if (parsed.mode === "messages") {
-          handleMessagesEvent(parsed);
-        } else if (parsed.mode === "custom") {
-          handleCustomEvent(parsed);
+      if (eventType === "error") {
+        handleErrorEvent(data);
+      } else if (eventType === "end") {
+        setIsStreaming(false);
+        if (!currentConversationId) {
+          setCurrentConversationId(uuidv4());
         }
-      } catch (e) {
-        console.error("Failed to parse event data:", e);
+        if (process.env.NODE_ENV === "development") {
+          console.log("End event received, steps:", steps);
+        }
+      } else if (data) {
+        if (data === ":keep-alive") return;
+
+        try {
+          const parsed = JSON.parse(data);
+
+          if (parsed.mode === "messages") {
+            handleMessagesEvent(parsed);
+          } else if (parsed.mode === "custom") {
+            handleCustomEvent(parsed);
+          }
+        } catch (e) {
+          console.error("Failed to parse event data:", e);
+        }
       }
-    }
-  }, [parseEventData, handleErrorEvent, handleMessagesEvent, handleCustomEvent, currentConversationId, steps]);
+    },
+    [
+      parseEventData,
+      handleErrorEvent,
+      handleMessagesEvent,
+      handleCustomEvent,
+      currentConversationId,
+      steps,
+    ]
+  );
 
   // 停止流式传输函数
   const stopStream = useCallback(() => {
@@ -264,77 +280,83 @@ export const useChat = () => {
   }, [streamMessage]);
 
   // 开始流式传输函数
-  const startStream = useCallback(async (inputValue, effort, model) => {
-    if (!inputValue.trim()) {
-      setError("查询不能为空");
-      return;
-    }
-
-    setError(null);
-    setSteps([]);
-    setMessages((prev) => [
-      ...prev,
-      { type: "user", content: inputValue },
-      { type: "assistant", content: "Researching..." },
-    ]);
-    setStreamMessage("");
-    setIsStreaming(true);
-
-    try {
-      abortControllerRef.current = new AbortController();
-
-      const response = await fetch("/llm/deep/search/stream", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ query: inputValue, messages, effort, model }),
-        signal: abortControllerRef.current.signal,
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(
-          `HTTP error! status: ${response.status}, message: ${errorText}`
-        );
+  const startStream = useCallback(
+    async (inputValue, effort, model) => {
+      if (!inputValue.trim()) {
+        setError("查询不能为空");
+        return;
       }
 
-      if (!response.body) {
-        throw new Error("ReadableStream not supported");
-      }
+      setError(null);
+      setSteps([]);
+      setMessages((prev) => [
+        ...prev,
+        { type: "user", content: inputValue },
+        { type: "assistant", content: "Researching..." },
+      ]);
+      setStreamMessage("");
+      setIsStreaming(true);
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
+      try {
+        abortControllerRef.current = new AbortController();
 
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
+        const response = await fetch("/llm/deep/search/stream", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ query: inputValue, messages, effort, model }),
+          signal: abortControllerRef.current.signal,
+        });
 
-        buffer += decoder.decode(value, { stream: true });
-
-        let eventEndIndex;
-        while ((eventEndIndex = buffer.indexOf("\n\n")) !== -1) {
-          const eventData = buffer.substring(0, eventEndIndex);
-          buffer = buffer.substring(eventEndIndex + 2);
-          processEvent(eventData);
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(
+            `HTTP error! status: ${response.status}, message: ${errorText}`
+          );
         }
+
+        if (!response.body) {
+          throw new Error("ReadableStream not supported");
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+
+          let eventEndIndex;
+          while ((eventEndIndex = buffer.indexOf("\n\n")) !== -1) {
+            const eventData = buffer.substring(0, eventEndIndex);
+            buffer = buffer.substring(eventEndIndex + 2);
+            processEvent(eventData);
+          }
+        }
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          console.error("Streaming error:", err);
+          setError(err.message || "流式传输失败");
+        }
+      } finally {
+        setIsStreaming(false);
+        abortControllerRef.current = null;
       }
-    } catch (err) {
-      if (err.name !== "AbortError") {
-        console.error("Streaming error:", err);
-        setError(err.message || "流式传输失败");
-      }
-    } finally {
-      setIsStreaming(false);
-      abortControllerRef.current = null;
-    }
-  }, [messages, processEvent]);
+    },
+    [messages, processEvent]
+  );
 
   // 处理提交事件
-  const handleSubmit = useCallback((inputValue, effort, model) => {
-    startStream(inputValue, effort, model);
-  }, [startStream]);
+  const handleSubmit = useCallback(
+    (inputValue, effort, model) => {
+      startStream(inputValue, effort, model);
+    },
+    [startStream]
+  );
 
   // 处理取消事件
   const handleCancel = useCallback(() => {
@@ -355,7 +377,7 @@ export const useChat = () => {
     currentConversationId,
     abortControllerRef,
     scrollAreaRef,
-    
+
     // Actions
     setQuery,
     setDrawerVisible,

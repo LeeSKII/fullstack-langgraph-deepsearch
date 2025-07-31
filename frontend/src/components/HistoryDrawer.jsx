@@ -52,7 +52,9 @@ export const HistoryDrawer = ({
                 </p>
               ) : (
                 <div className="space-y-2 pr-2">
-                  {history.map((conversation) => (
+                  {[...history]
+                    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+                    .map((conversation) => (
                     <div
                       key={conversation.id}
                       className="flex flex-row justify-between items-center p-3 rounded-lg bg-neutral-700 hover:bg-neutral-600 transition-colors duration-200 cursor-pointer w-full"
