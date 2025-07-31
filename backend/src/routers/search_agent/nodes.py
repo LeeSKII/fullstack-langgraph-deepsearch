@@ -165,7 +165,7 @@ def analyze_need_web_search(state: OverallState, llm: Any, system_prompt: str) -
 @error_handler("generate_search_query")
 def generate_search_query(state: OverallState, llm: Any, system_prompt: str) -> OverallState:
     """生成搜索查询"""
-    send_node_updates('generate_search_query', "generate_search_query is running", "generate_search_query is running")
+    send_node_updates('generate_search_query', "generate_search_query is running", "generate_search_query is done")
     
     query = state['query']
     messages = state.get("messages", [])
@@ -229,7 +229,7 @@ def web_search(state: OverallState, tavily_client: Any) -> OverallState:
 @error_handler("evaluate_search_results")
 def evaluate_search_results(state: OverallState, llm: Any, system_prompt: str) -> OverallState:
     """评估搜索结果,是否足够可以回答用户提问"""
-    send_node_updates('evaluate_search_results', "evaluate_search_results is running', 'evaluate_search_results is running")
+    send_node_updates('evaluate_search_results', "evaluate_search_results is running', 'evaluate_search_results is done")
     
     current_search_results = state['web_search_results']
     query = state['query']
@@ -279,7 +279,7 @@ def evaluate_search_results(state: OverallState, llm: Any, system_prompt: str) -
 @error_handler("assistant_node")
 def assistant_node(state: OverallState, llm: Any, system_prompt: str, reply_system_prompt: str) -> OverallState:
     """助手响应"""
-    send_node_updates('assistant_node', "assistant_node is running", "assistant_node is running")
+    send_node_updates('assistant_node', "assistant_node is running", "assistant_node is done")
     
     query = state['query']
     
