@@ -20,7 +20,7 @@ from .nodes import (
 )
 
 
-def create_workflow(llm, tavily_client, system_prompt, reply_system_prompt):
+def create_workflow(llm, tavily_client, system_prompt):
     """创建并编译工作流"""
     
     # 创建图形
@@ -33,7 +33,7 @@ def create_workflow(llm, tavily_client, system_prompt, reply_system_prompt):
     generate_search_query_node = partial(generate_search_query, llm=llm, system_prompt=system_prompt)
     web_search_node = partial(web_search, tavily_client=tavily_client)
     evaluate_search_results_node = partial(evaluate_search_results, llm=llm, system_prompt=system_prompt)
-    assistant_node_node = partial(assistant_node, llm=llm, system_prompt=system_prompt, reply_system_prompt=reply_system_prompt)
+    assistant_node_node = partial(assistant_node, llm=llm, system_prompt=system_prompt)
     
     # 添加节点
     workflow.add_node('agent_router', agent_router_node)

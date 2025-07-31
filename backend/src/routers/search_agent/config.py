@@ -10,20 +10,19 @@ from langchain_openai import ChatOpenAI
 from tavily import TavilyClient
 from typing import Optional
 
-from ...utils.constants import (
+from .constants import (
     QWEN_API_KEY, 
     QWEN_API_BASE_URL, 
     SEARCH_MODEL_NAME, 
     TAVILY_API_KEY, 
     DEFAULT_SEARCH_MODEL_NAME,
-    SIMPLE_SYSTEM_PROMPT, 
-    DETAILED_SYSTEM_PROMPT,
     ERROR_QWEN_API_KEY_MISSING, 
     ERROR_QWEN_API_BASE_URL_MISSING, 
     ERROR_TAVILY_API_KEY_MISSING,
     MAX_SEARCH_LOOP
 )
 
+from .prompts import answer_instructions,system_instructions
 
 class SearchAgentConfig:
     """搜索智能体配置类"""
@@ -44,7 +43,6 @@ class SearchAgentConfig:
         
         # 配置系统提示
         self.system_prompt = self._init_system_prompt()
-        self.reply_system_prompt = self._init_reply_system_prompt()
         
         # 其他配置
         self.max_search_loop = MAX_SEARCH_LOOP
@@ -72,11 +70,7 @@ class SearchAgentConfig:
     
     def _init_system_prompt(self) -> str:
         """初始化简单系统提示"""
-        return SIMPLE_SYSTEM_PROMPT.format(current_time=time.strftime("%Y-%m-%d", time.localtime()))
-    
-    def _init_reply_system_prompt(self) -> str:
-        """初始化详细系统提示"""
-        return DETAILED_SYSTEM_PROMPT.format(current_time=time.strftime("%Y-%m-%d", time.localtime()))
+        return system_instructions
     
     def update_system_prompts(self):
         """更新系统提示（例如，当日期变化时）"""
@@ -106,8 +100,3 @@ def get_tavily_client() -> TavilyClient:
 def get_system_prompt() -> str:
     """获取简单系统提示"""
     return config.system_prompt
-
-
-def get_reply_system_prompt() -> str:
-    """获取详细系统提示"""
-    return config.reply_system_prompt

@@ -4,13 +4,13 @@ from datetime import datetime
 def get_current_date():
     return datetime.now().strftime("%B %d, %Y")
 
+system_instructions = """You are clerk, a deep search expert of Deep Thinking Search AI System.Today's date is {date}.If not other language is specified, reply with Simplify Chinese(简体中文).""".format(date=get_current_date())
+
 clarify_with_user_instructions="""
 These are the messages that have been exchanged so far from the user asking for the report:
 <Messages>
 {messages}
 </Messages>
-
-Today's date is {date}.
 
 Assess whether you need to ask a clarifying question, or if the user has already provided enough information for you to start research.
 IMPORTANT: If you can see in the messages history that you have already asked a clarifying question, you almost always do not need to ask another one. Only ask another question if ABSOLUTELY NECESSARY.

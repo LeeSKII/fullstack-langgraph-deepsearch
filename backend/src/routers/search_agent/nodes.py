@@ -21,8 +21,8 @@ from .models import (
     AnalyzeRouter
 )
 from ...utils.helpers import send_node_execution_update, send_stream_message_update, send_messages_update
-from ...utils.prompts import clarify_with_user_instructions
-from ...utils.constants import (
+from .prompts import clarify_with_user_instructions
+from .constants import (
     ANALYZE_NEED_WEB_SEARCH_PROMPT, 
     GENERATE_SEARCH_QUERY_PROMPT, 
     EVALUATE_SEARCH_RESULTS_PROMPT
@@ -277,7 +277,7 @@ def evaluate_search_results(state: OverallState, llm: Any, system_prompt: str) -
 
 
 @error_handler("assistant_node")
-def assistant_node(state: OverallState, llm: Any, system_prompt: str, reply_system_prompt: str) -> OverallState:
+def assistant_node(state: OverallState, llm: Any, system_prompt: str) -> OverallState:
     """助手响应"""
     send_node_updates('assistant_node', "assistant_node is running", "assistant_node is done")
     
@@ -285,7 +285,7 @@ def assistant_node(state: OverallState, llm: Any, system_prompt: str, reply_syst
     
     if state['isNeedWebSearch']:
         send_messages = [
-            {'role': 'system', 'content': reply_system_prompt},
+            {'role': 'system', 'content': system_prompt},
             *state['messages'],
             {
                 "role": "user",

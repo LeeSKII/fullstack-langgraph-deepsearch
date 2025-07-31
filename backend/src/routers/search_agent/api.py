@@ -14,8 +14,8 @@ from langchain_core.messages import message_to_dict
 
 from .models import InputData
 from .workflow import create_workflow
-from .config import get_config, get_llm, get_tavily_client, get_system_prompt, get_reply_system_prompt
-from ...utils.constants import ERROR_QUERY_EMPTY, ERROR_MESSAGES_NOT_LIST, MAX_SEARCH_LOOP
+from .config import get_config, get_llm, get_tavily_client, get_system_prompt
+from .constants import ERROR_QUERY_EMPTY, ERROR_MESSAGES_NOT_LIST, MAX_SEARCH_LOOP
 
 # 创建路由器
 router = APIRouter()
@@ -26,7 +26,6 @@ app = create_workflow(
     llm=get_llm(),
     tavily_client=get_tavily_client(),
     system_prompt=get_system_prompt(),
-    reply_system_prompt=get_reply_system_prompt()
 )
 
 
