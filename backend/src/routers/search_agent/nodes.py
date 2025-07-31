@@ -6,11 +6,12 @@
 import time
 import logging
 from functools import wraps
-from typing import Callable, Any, Dict, List
+from typing import Callable, Any, Dict, List, Optional
 from langgraph.types import Command
 from typing_extensions import Literal
 from fastapi import HTTPException
 from langchain.output_parsers import PydanticOutputParser
+from enum import Enum
 
 from .models import (
     OverallState, 
@@ -29,6 +30,13 @@ from .constants import (
 )
 
 
+class NodeStatus(str, Enum):
+    """节点状态枚举"""
+    RUNNING = "running"
+    DONE = "done"
+    ERROR = "error"
+
+
 def error_handler(node_name: str):
     """错误处理装饰器"""
     def decorator(func: Callable) -> Callable:
@@ -44,29 +52,24 @@ def error_handler(node_name: str):
     return decorator
 
 
-def send_node_updates(node_name: str, running_message: str, done_message: str, data=None):
-    """发送节点更新信息的辅助函数"""
-    send_node_execution_update(node_name, running_message, 'running')
-    send_stream_message_update(node_name, running_message, 'running')
+def send_node_update(node_name: str, status: NodeStatus, data: Optional[Dict] = None):
+    """发送节点更新信息的统一函数"""
+    message = f"{node_name} is {status.value}"
     
-    if data:
-        send_node_execution_update(node_name, done_message, 'done', data)
-    else:
-        send_node_execution_update(node_name, done_message, 'done')
-    
-    send_stream_message_update(node_name, done_message, 'done')
+    send_node_execution_update(node_name, message, status.value, data)
+    send_stream_message_update(node_name, message, status.value)
 
 
 def agent_router(state: OverallState, llm, system_prompt: str) -> Command[Literal['clarify_with_user', 'assistant']]:
     """判断是否需要深度研究的智能路由"""
-    send_node_updates('agent_router', "agent_router is running", "agent_router is done")
+    send_node_update('agent_router', NodeStatus.RUNNING)
     
     query = state.get("query", "")
     messages = state.get("messages", [])
     parser = PydanticOutputParser(pydantic_object=AnalyzeRouter)
     format_instructions = parser.get_format_instructions()
     
-    router_system_prompt = f"你是一个智能分析路由，判断用户的提问是否需要深入思考，还是可以直接回答,你给出的回答必须使用json格式，满足以下格式要求：{format_instructions}"
+    router_system_prompt = f"你是一个智能分析路由，判断用户的提问是否需要进行深度研究，还是可以直接回答,你给出的回答必须使用json格式，满足以下格式要求：{format_instructions}"
     structured_output_model = llm.with_structured_output(schema=AnalyzeRouter).with_retry(stop_after_attempt=3)
     
     response = structured_output_model.invoke([
@@ -76,7 +79,7 @@ def agent_router(state: OverallState, llm, system_prompt: str) -> Command[Litera
     ])
     
     messages.append({"role": "user", "content": query})
-    send_node_execution_update('agent_router', "agent_router is done", 'done', response.model_dump())
+    send_node_update('agent_router', NodeStatus.DONE, response.model_dump())
     
     if response.need_deep_research:
         return Command(goto="clarify_with_user", update={"messages": messages})
@@ -87,7 +90,7 @@ def agent_router(state: OverallState, llm, system_prompt: str) -> Command[Litera
 @error_handler("clarify_with_user")
 def clarify_with_user(state: OverallState, llm: Any) -> Command[Literal['analyze_need_web_search', '__end__']]:
     """与用户进行交流，澄清用户的需求"""
-    send_node_updates('clarify_with_user', "clarify_with_user is running", "clarify_with_user is done")
+    send_node_update('clarify_with_user', NodeStatus.RUNNING)
     
     model = llm.with_structured_output(ClarifyUser).with_retry(stop_after_attempt=3)
     state['messages'].extend([{'role': 'user', 'content': state['query']}])
@@ -96,15 +99,14 @@ def clarify_with_user(state: OverallState, llm: Any) -> Command[Literal['analyze
     response = model.invoke([{
         "role": "user",
         "content": clarify_with_user_instructions.format(
-            messages=str(messages), 
+            messages=str(messages),
             date=time.strftime("%Y-%m-%d", time.localtime())
         )
     }])
     
-    send_node_execution_update(
-        'clarify_with_user', 
-        "clarify_with_user is done", 
-        'done', 
+    send_node_update(
+        'clarify_with_user',
+        NodeStatus.DONE,
         {
             "need_clarification": response.need_clarification,
             "question": response.question,
@@ -124,7 +126,7 @@ def clarify_with_user(state: OverallState, llm: Any) -> Command[Literal['analyze
 @error_handler("analyze_need_web_search")
 def analyze_need_web_search(state: OverallState, llm: Any, system_prompt: str) -> OverallState:
     """判断是否需要进行网页搜索"""
-    send_node_updates('analyze_need_web_search', "analyze_need_web_search is running", "analyze_need_web_search is running")
+    send_node_update('analyze_need_web_search', NodeStatus.RUNNING)
     
     parser = PydanticOutputParser(pydantic_object=WebSearchJudgement)
     format_instructions = parser.get_format_instructions()
@@ -140,10 +142,9 @@ def analyze_need_web_search(state: OverallState, llm: Any, system_prompt: str) -
     model = parser.parse(response.content)
     logging.info(f"Parsed analyze_need_web_search model: {model}")
     
-    send_node_updates(
+    send_node_update(
         'analyze_need_web_search',
-        "analyze_need_web_search is running",
-        "analyze_need_web_search is done",
+        NodeStatus.DONE,
         {
             "query": state['query'],
             "messages": state['messages'],
@@ -165,7 +166,7 @@ def analyze_need_web_search(state: OverallState, llm: Any, system_prompt: str) -
 @error_handler("generate_search_query")
 def generate_search_query(state: OverallState, llm: Any, system_prompt: str) -> OverallState:
     """生成搜索查询"""
-    send_node_updates('generate_search_query', "generate_search_query is running", "generate_search_query is done")
+    send_node_update('generate_search_query', NodeStatus.RUNNING)
     
     query = state['query']
     messages = state.get("messages", [])
@@ -182,10 +183,9 @@ def generate_search_query(state: OverallState, llm: Any, system_prompt: str) -> 
     model = parser.parse(response.content)
     logging.info(f"Parsed generate_search_query model: {model}")
     
-    send_node_updates(
+    send_node_update(
         'generate_search_query',
-        "generate_search_query is running",
-        "generate_search_query is done",
+        NodeStatus.DONE,
         {
             "web_search_query": model.query,
             "web_search_depth": model.search_depth,
@@ -205,7 +205,7 @@ def generate_search_query(state: OverallState, llm: Any, system_prompt: str) -> 
 @error_handler("web_search")
 def web_search(state: OverallState, tavily_client: Any) -> OverallState:
     """网页搜索"""
-    send_node_execution_update('web_search', "web_search is running", 'running')
+    send_node_update('web_search', NodeStatus.RUNNING)
     
     query = state['web_search_query']
     search_depth = state['web_search_depth']
@@ -216,7 +216,7 @@ def web_search(state: OverallState, tavily_client: Any) -> OverallState:
     
     search_loop = state['search_loop'] + 1
     
-    send_node_execution_update('web_search', "web_search is done", 'done', {"web_search_results": search_result['results']})
+    send_node_update('web_search', NodeStatus.DONE, {"web_search_results": search_result['results']})
     
     return {
         "web_search_results": search_result['results'],
@@ -229,7 +229,7 @@ def web_search(state: OverallState, tavily_client: Any) -> OverallState:
 @error_handler("evaluate_search_results")
 def evaluate_search_results(state: OverallState, llm: Any, system_prompt: str) -> OverallState:
     """评估搜索结果,是否足够可以回答用户提问"""
-    send_node_updates('evaluate_search_results', "evaluate_search_results is running', 'evaluate_search_results is done")
+    send_node_update('evaluate_search_results', NodeStatus.RUNNING)
     
     current_search_results = state['web_search_results']
     query = state['query']
@@ -253,10 +253,9 @@ def evaluate_search_results(state: OverallState, llm: Any, system_prompt: str) -
     model = parser.parse(response.content)
     logging.info(f"Parsed evaluate_search_results model: {model}")
     
-    send_node_updates(
+    send_node_update(
         'evaluate_search_results',
-        "evaluate_search_results is running",
-        "evaluate_search_results is done",
+        NodeStatus.DONE,
         {
             "is_sufficient": model.is_sufficient,
             "followup_search_query": model.followup_search_query,
@@ -279,7 +278,7 @@ def evaluate_search_results(state: OverallState, llm: Any, system_prompt: str) -
 @error_handler("assistant_node")
 def assistant_node(state: OverallState, llm: Any, system_prompt: str) -> OverallState:
     """助手响应"""
-    send_node_updates('assistant_node', "assistant_node is running", "assistant_node is done")
+    send_node_update('assistant_node', NodeStatus.RUNNING)
     
     query = state['query']
     
@@ -308,10 +307,9 @@ def assistant_node(state: OverallState, llm: Any, system_prompt: str) -> Overall
         {"role": "assistant", "content": ai_response.content}
     ]
     
-    send_node_updates(
+    send_node_update(
         'assistant_node',
-        "assistant_node is running",
-        "assistant_node is done",
+        NodeStatus.DONE,
         {"response": "Response generated successfully"}
     )
     
