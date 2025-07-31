@@ -281,9 +281,9 @@ def assistant_node(state: OverallState, llm: Any, system_prompt: str) -> Overall
     send_node_update('assistant_node', NodeStatus.RUNNING)
     
     query = state['query']
-    summaries = state['web_search_results']
     
     if state['isNeedWebSearch']:
+        summaries = state['web_search_results']
         send_messages = [
             {'role': 'system', 'content': system_prompt},
             *state['messages'],
