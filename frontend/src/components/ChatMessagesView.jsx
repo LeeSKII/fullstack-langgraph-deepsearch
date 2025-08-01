@@ -5,7 +5,7 @@ import { Button } from "./ui/button";
 import { useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "./ui/badge";
 import { ActivityTimeline } from "./ActivityTimeline"; // Assuming ActivityTimeline is in the same dir or adjust path
 import remarkGfm from "remark-gfm"; //使用remark-gfm插件 渲染例如表格部分
 import rehypeRaw from "rehype-raw"; //使用插件渲染markdown中的html部分
