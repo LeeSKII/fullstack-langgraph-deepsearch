@@ -8,6 +8,8 @@ from typing_extensions import TypedDict
 from pydantic import BaseModel, Field
 from enum import Enum
 from operator import add
+from typing import List
+from typing_extensions import Annotated
 
 
 class SearchDepthEnum(str, Enum):
@@ -33,11 +35,11 @@ class WebSearchQuery(BaseModel):
 
 class EvaluateWebSearchResult(BaseModel):
     """评估搜索结果的模型"""
-    is_sufficient: bool = Field(description="是否搜索到了足够的信息帮助用户回答")
-    followup_search_query: str = Field(default="", description="如果搜索结果不足以回答用户提问，进行进一步的搜索的问题")
-    search_depth: SearchDepthEnum = Field(default=SearchDepthEnum.BASIC, description="进行进一步的搜索的问题,搜索的深度，枚举值：BASIC、ADVANCED")
-    reason: str = Field(default="", description="生成该搜索问题的原因")
-    confidence: float = Field(description="置信度")
+    is_sufficient: bool = Field(description="Whether the provided summaries are sufficient to answer the user's question.")
+    follow_up_queries: List[str] = Field(
+        description="A list of follow-up queries to address the knowledge gap."
+    )
+    knowledge_gap: str = Field(default="", description="Describe what information is missing or needs clarification")
 
 
 class ClarifyUser(BaseModel):
@@ -64,16 +66,33 @@ class AnalyzeRouter(BaseModel):
         description="The confidence of the assistant's decision to perform a deep research. From 0 to 1.",
     )
 
+class SearchQueryList(BaseModel):
+    query: List[str] = Field(
+        description="A list of search queries to be used for web research."
+    )
+    rationale: str = Field(
+        description="A brief explanation of why these queries are relevant to the research topic."
+    )
+
+class WebSearchState(TypedDict):
+    search_query: str
+    id: str
+
+class WebSearchDoc(BaseModel):
+    """网页搜索结果模型"""
+    title: str = Field(description="网页标题")
+    url: str = Field(description="网页链接")
+    content: str = Field(description="网页内容")
 
 # 定义状态类
 class OverallState(TypedDict):
     """工作流状态类，用于在各个节点之间传递状态"""
     query: str  # 用户查询
     messages: list[dict]  # 消息历史
-    web_search_query: str  # 网络搜索查询
+    web_search_query_wait_list: list[str]  # 待网络搜索查询列表
     web_search_depth: str  # 搜索深度
-    web_search_results: list[str]  # 搜索结果列表
-    web_search_query_list: list[str]  # 搜索查询历史列表
+    web_search_results_list: Annotated[list, add]  # 搜索结果列表
+    web_search_queries_list: Annotated[list, add]  # 搜索查询历史列表
     max_search_loop: int  # 最大搜索循环次数
     search_loop: int  # 当前搜索循环次数
     response: str  # 响应内容
@@ -81,7 +100,8 @@ class OverallState(TypedDict):
     reason: str  # 判断原因
     confidence: float  # 置信度
     is_sufficient: bool  # 搜索结果是否足够
-    followup_search_query: str  # 后续搜索查询
+    followup_search_query: list[str]  # 后续搜索查询
+    knowledge_gap: str  # 知识缺口
 
 
 class InputData(TypedDict):

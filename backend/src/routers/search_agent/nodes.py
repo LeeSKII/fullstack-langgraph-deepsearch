@@ -7,11 +7,13 @@ import time
 import logging
 from functools import wraps
 from typing import Callable, Any, Dict, List, Optional
-from langgraph.types import Command
+from langgraph.types import Command,Send
 from typing_extensions import Literal
 from fastapi import HTTPException
 from langchain.output_parsers import PydanticOutputParser
 from enum import Enum
+
+from sqlalchemy import over
 
 from .models import (
     OverallState, 
@@ -19,16 +21,16 @@ from .models import (
     WebSearchQuery, 
     EvaluateWebSearchResult, 
     ClarifyUser, 
-    AnalyzeRouter
+    AnalyzeRouter,
+    SearchQueryList,
+    WebSearchState,
+    WebSearchDoc
 )
 from ...utils.helpers import send_node_execution_update, send_stream_message_update, send_messages_update
-from .prompts import clarify_with_user_instructions,answer_instructions
-from .constants import (
-    ANALYZE_NEED_WEB_SEARCH_PROMPT, 
-    GENERATE_SEARCH_QUERY_PROMPT, 
-    EVALUATE_SEARCH_RESULTS_PROMPT
-)
+from .prompts import clarify_with_user_instructions,answer_instructions,analyze_need_web_search_instructions,query_writer_instructions,reflection_instructions
+from .config import get_config
 
+config = get_config()
 
 class NodeStatus(str, Enum):
     """节点状态枚举"""
@@ -131,7 +133,7 @@ def analyze_need_web_search(state: OverallState, llm: Any, system_prompt: str) -
     parser = PydanticOutputParser(pydantic_object=WebSearchJudgement)
     format_instructions = parser.get_format_instructions()
     query = state['query']
-    prompt = ANALYZE_NEED_WEB_SEARCH_PROMPT.format(query=query, format_instructions=format_instructions)
+    prompt = analyze_need_web_search_instructions.format(query=query, format_instructions=format_instructions)
     
     response = llm.invoke([
         {'role': 'system', 'content': system_prompt},
@@ -146,8 +148,6 @@ def analyze_need_web_search(state: OverallState, llm: Any, system_prompt: str) -
         'analyze_need_web_search',
         NodeStatus.DONE,
         {
-            "query": state['query'],
-            "messages": state['messages'],
             "isNeedWebSearch": model.isNeedWebSearch,
             "reason": model.reason,
             "confidence": model.confidence
@@ -155,9 +155,8 @@ def analyze_need_web_search(state: OverallState, llm: Any, system_prompt: str) -
     )
     
     return {
-        "query": state['query'],
-        "messages": state['messages'],
         "isNeedWebSearch": model.isNeedWebSearch,
+        "is_sufficient":False,
         "reason": model.reason,
         "confidence": model.confidence
     }
@@ -170,59 +169,46 @@ def generate_search_query(state: OverallState, llm: Any, system_prompt: str) -> 
     
     query = state['query']
     messages = state.get("messages", [])
-    parser = PydanticOutputParser(pydantic_object=WebSearchQuery)
+    generated_queries_number = state.get("generated_queries_number", config.default_number_queries)
+    parser = PydanticOutputParser(pydantic_object=SearchQueryList)
     format_instructions = parser.get_format_instructions()
-    prompt = GENERATE_SEARCH_QUERY_PROMPT.format(query=query, format_instructions=format_instructions)
-    
-    response = llm.invoke([
+    prompt = query_writer_instructions.format(query=query, format_instructions=format_instructions,number_queries=generated_queries_number)
+    llm_with_structured =  llm.with_structured_output(SearchQueryList).with_retry(stop_after_attempt=3)
+    response:SearchQueryList = llm_with_structured.invoke([
         {'role': 'system', 'content': system_prompt},
         *messages,
         {"role": "user", "content": prompt}
     ])
     
-    model = parser.parse(response.content)
-    logging.info(f"Parsed generate_search_query model: {model}")
+    logging.info(f"Parsed generate_search_query model: {response}")
     
     send_node_update(
         'generate_search_query',
         NodeStatus.DONE,
-        {
-            "web_search_query": model.query,
-            "web_search_depth": model.search_depth,
-            "reason": model.reason,
-            "confidence": model.confidence
-        }
+        response.model_dump()
     )
-    
+
     return {
-        "web_search_query": model.query,
-        "web_search_depth": model.search_depth,
-        "reason": model.reason,
-        "confidence": model.confidence
+        'web_search_query_wait_list': response.query,
     }
 
-
 @error_handler("web_search")
-def web_search(state: OverallState, tavily_client: Any) -> OverallState:
+def web_search(state: WebSearchState, tavily_client: Any) -> OverallState:
     """网页搜索"""
     send_node_update('web_search', NodeStatus.RUNNING)
     
-    query = state['web_search_query']
-    search_depth = state['web_search_depth']
-    messages = state.get("messages", [])
+    query = state['search_query']
     
-    search_result = tavily_client.search(query, search_depth=search_depth)
-    logging.info(f"搜索查询: {query}, 搜索深度: {search_depth}")
+    response = tavily_client.search(query, search_depth='basic')
+    search_result = response['results']
+    # sources_gathered = [WebSearchDoc(title=item['title'], url=item['url'], content=item['content']) for item in search_result]
+    sources_gathered = [{"title": item['title'], "url": item['url'], "content": item['content']} for item in search_result]
     
-    search_loop = state['search_loop'] + 1
-    
-    send_node_update('web_search', NodeStatus.DONE, {"web_search_results": search_result['results']})
+    send_node_update('web_search', NodeStatus.DONE, {"web_search_results": sources_gathered})
     
     return {
-        "web_search_results": search_result['results'],
-        "messages": messages,
-        "search_loop": search_loop,
-        "web_search_query_list": [query]
+        "web_search_results_list": sources_gathered,
+        "web_search_queries_list": [query]
     }
 
 
@@ -231,47 +217,38 @@ def evaluate_search_results(state: OverallState, llm: Any, system_prompt: str) -
     """评估搜索结果,是否足够可以回答用户提问"""
     send_node_update('evaluate_search_results', NodeStatus.RUNNING)
     
-    current_search_results = state['web_search_results']
+    current_search_results = state['web_search_results_list']
     query = state['query']
-    web_search_query = state['web_search_query']
+    messages = state.get("messages", [])
+
     parser = PydanticOutputParser(pydantic_object=EvaluateWebSearchResult)
     format_instructions = parser.get_format_instructions()
     
-    prompt = EVALUATE_SEARCH_RESULTS_PROMPT.format(
-        query=query,
-        web_search_query=web_search_query,
-        web_search_query_list=state['web_search_query_list'],
-        current_search_results=current_search_results,
-        format_instructions=format_instructions
+    prompt = reflection_instructions.format(
+        research_topic=query,
+        format_instructions=format_instructions,
+        summaries=current_search_results
     )
-    
-    response = llm.invoke([
+    llm_with_structured =  llm.with_structured_output(EvaluateWebSearchResult).with_retry(stop_after_attempt=3)
+    response:EvaluateWebSearchResult = llm_with_structured.invoke([
         {'role': 'system', 'content': system_prompt},
+        *messages,
         {"role": "user", "content": prompt}
     ])
-    
-    model = parser.parse(response.content)
-    logging.info(f"Parsed evaluate_search_results model: {model}")
+
+    logging.info(f"Parsed evaluate_search_results model: {response}")
     
     send_node_update(
         'evaluate_search_results',
         NodeStatus.DONE,
-        {
-            "is_sufficient": model.is_sufficient,
-            "followup_search_query": model.followup_search_query,
-            "search_depth": model.search_depth,
-            "reason": model.reason,
-            "confidence": model.confidence
-        }
+        response.model_dump()
     )
     
     return {
-        "is_sufficient": model.is_sufficient,
-        "web_search_query": model.followup_search_query,
-        "followup_search_query": model.followup_search_query,
-        "search_depth": model.search_depth,
-        "reason": model.reason,
-        "confidence": model.confidence
+        "is_sufficient": response.is_sufficient,
+        "followup_search_query": response.follow_up_queries,
+        "knowledge_gap": response.knowledge_gap,
+        "web_search_query_wait_list": response.follow_up_queries,
     }
 
 
@@ -283,7 +260,7 @@ def assistant_node(state: OverallState, llm: Any, system_prompt: str) -> Overall
     query = state['query']
     
     if state['isNeedWebSearch']:
-        summaries = state['web_search_results']
+        summaries = state['web_search_results_list']
         send_messages = [
             {'role': 'system', 'content': system_prompt},
             *state['messages'],
@@ -321,15 +298,15 @@ def assistant_node(state: OverallState, llm: Any, system_prompt: str) -> Overall
         "messages": messages
     }
 
-
-def need_web_search(state: OverallState) -> bool:
-    """判断是否需要网页搜索"""
-    return state['isNeedWebSearch']
-
-
-def need_next_search(state: OverallState) -> str:
+def need_web_search(state: OverallState) -> str:
     """判断是否需要进行下一次搜索"""
-    if state["is_sufficient"] or state["search_loop"] >= state["max_search_loop"]:
+    query_count = len(state['web_search_queries_list'])
+    if state["is_sufficient"] or query_count >= state["max_search_loop"]:
+        return "assistant"
+    elif state['web_search_query_wait_list'] == []:
         return "assistant"
     else:
-        return "web_search"
+        return [
+            Send("web_search", {"search_query": search_query, "id": int(idx)})
+            for idx, search_query in enumerate(state['web_search_query_wait_list'])
+        ]

@@ -19,7 +19,8 @@ from .constants import (
     ERROR_QWEN_API_KEY_MISSING, 
     ERROR_QWEN_API_BASE_URL_MISSING, 
     ERROR_TAVILY_API_KEY_MISSING,
-    MAX_SEARCH_LOOP
+    MAX_SEARCH_LOOP,
+    DEFAULT_NUMBER_QUERIES
 )
 
 from .prompts import answer_instructions,system_instructions
@@ -43,6 +44,8 @@ class SearchAgentConfig:
         
         # 配置系统提示
         self.system_prompt = self._init_system_prompt()
+
+        self.default_number_queries = DEFAULT_NUMBER_QUERIES
         
         # 其他配置
         self.max_search_loop = MAX_SEARCH_LOOP

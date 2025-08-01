@@ -53,28 +53,19 @@ Instructions:
 - Don't generate multiple similar queries, 1 is enough.
 - Query should ensure that the most current information is gathered. 
 
-Format: 
-- Format your response as a JSON object with ALL two of these exact keys:
-   - "rationale": Brief explanation of why these queries are relevant
-   - "query": A list of search queries
+Format rules:
+{format_instructions}
 
-Example:
+User Query: 
+{query}
 
-Topic: What revenue grew more last year apple stock or the number of people buying an iphone
-```json
-{{
-    "rationale": "To answer this comparative growth question accurately, we need specific data points on Apple's stock performance and iPhone sales metrics. These queries target the precise financial information needed: company revenue trends, product-specific unit sales figures, and stock price movement over the same fiscal period for direct comparison.",
-    "query": ["Apple total revenue growth fiscal year 2024", "iPhone unit sales growth fiscal year 2024", "Apple stock price growth fiscal year 2024"],
-}}
-```
-
-Context: {research_topic}
-
-Rules:
+Limitations:
 - Don't produce more than {number_queries} queries.
 """
 
+analyze_need_web_search_instructions  = "根据用户提出的问题:\n{query}\n。如果存在上下文信息，并且你能综合上下文信息，判断有足够的信息做出回答，如果上下文信息没有相关内容，但是你判断这是一个你可以优先根据内化知识进行回答的问题，那么也不需要执行网络搜索，返回isNeedWebSearch为False。如果既无法根据内化知识回答，也不能从上下文历史消息中获取足够的信息，那么就需要使用网络搜索，isNeedWebSearch为True。请使用json结构化输出，严格遵循json格式：\n{format_instructions}"
 
+# No used
 web_searcher_instructions = """Conduct targeted Google Searches to gather the most recent, credible information on "{research_topic}" and synthesize it into a verifiable text artifact.
 
 Instructions:
@@ -115,6 +106,7 @@ Example:
 ```
 
 Reflect carefully on the Summaries to identify knowledge gaps and produce a follow-up query. Then, produce your output following this JSON format:
+{format_instructions}
 
 Summaries:
 {summaries}

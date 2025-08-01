@@ -123,7 +123,7 @@ async def run_workflow_stream(input_data: InputData):
                     "max_search_loop": max_search_loop,
                     "search_loop": search_loop
                 }, 
-                stream_mode=["updates", "messages", "custom"]
+                stream_mode=["messages", "custom"]
             ):
                 logging.info(f"Chunk: {chunk}")
                 mode, *_ = chunk

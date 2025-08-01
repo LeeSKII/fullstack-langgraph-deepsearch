@@ -12,11 +12,10 @@ from .nodes import (
     clarify_with_user,
     analyze_need_web_search,
     generate_search_query,
+    need_web_search,
     web_search,
     evaluate_search_results,
     assistant_node,
-    need_web_search,
-    need_next_search
 )
 
 
@@ -40,6 +39,7 @@ def create_workflow(llm, tavily_client, system_prompt):
     workflow.add_node('clarify_with_user', clarify_with_user_node)
     workflow.add_node("analyze_need_web_search", analyze_need_web_search_node)
     workflow.add_node("generate_search_query", generate_search_query_node)
+
     workflow.add_node("web_search", web_search_node)
     workflow.add_node("evaluate_search_results", evaluate_search_results_node)
     workflow.add_node("assistant", assistant_node_node)
@@ -50,15 +50,16 @@ def create_workflow(llm, tavily_client, system_prompt):
     # 添加条件边
     workflow.add_conditional_edges(
         "analyze_need_web_search", 
-        need_web_search, 
+        lambda state: state['isNeedWebSearch'], 
         {True: "generate_search_query", False: "assistant"}
     )
-    workflow.add_edge("generate_search_query", "web_search")
+    workflow.add_conditional_edges("generate_search_query", need_web_search,"web_search")
+
     workflow.add_edge("web_search", "evaluate_search_results")
     workflow.add_conditional_edges(
         "evaluate_search_results", 
-        need_next_search, 
-        ["web_search", "assistant"]
+        need_web_search, 
+        ["web_search","assistant"]
     )
     workflow.add_edge("assistant", END)
     
