@@ -96,14 +96,12 @@ def clarify_with_user(state: OverallState, llm: Any) -> Command[Literal['analyze
     send_node_update('clarify_with_user', NodeStatus.RUNNING)
     
     model = llm.with_structured_output(ClarifyUser).with_retry(stop_after_attempt=3)
-    state['messages'].extend([{'role': 'user', 'content': state['query']}])
     messages = state['messages']
     
     response = model.invoke([{
         "role": "user",
         "content": clarify_with_user_instructions.format(
             messages=str(messages),
-            date=time.strftime("%Y-%m-%d", time.localtime())
         )
     }])
     
@@ -282,8 +280,7 @@ def assistant_node(state: OverallState, llm: Any, system_prompt: str) -> Overall
     else:
         send_messages = [
             {'role': 'system', 'content': system_prompt},
-            *state['messages'],
-            {"role": "user", "content": f"{state['query']}"}
+            *state['messages']
         ]
     
     ai_response = llm.invoke(send_messages)
