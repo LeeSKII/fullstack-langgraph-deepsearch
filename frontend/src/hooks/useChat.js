@@ -52,14 +52,22 @@ export const useChat = () => {
   const saveConversationToHistory = useCallback(
     (messages, currentConversationId) => {
       if (messages.length > 0) {
-        const timestamp = new Date().toLocaleString();
-
         if (currentConversationId) {
           setHistory((prevHistory) => {
             const existingIndex = prevHistory.findIndex(
               (item) => item.id === currentConversationId
             );
             if (existingIndex >= 0) {
+              // 检查消息是否相等
+              const existingMessages = prevHistory[existingIndex].messages;
+              const isMessagesEqual = JSON.stringify(existingMessages) === JSON.stringify(messages);
+              
+              if (isMessagesEqual) {
+                // 消息相等，不更新
+                return prevHistory;
+              }
+              
+              const timestamp = new Date().toLocaleString();
               const updatedHistory = [...prevHistory];
               updatedHistory[existingIndex] = {
                 ...updatedHistory[existingIndex],
@@ -68,6 +76,7 @@ export const useChat = () => {
               };
               return updatedHistory;
             } else {
+              const timestamp = new Date().toLocaleString();
               const conversation = {
                 id: uuidv4(),
                 timestamp,
@@ -77,6 +86,7 @@ export const useChat = () => {
             }
           });
         } else {
+          const timestamp = new Date().toLocaleString();
           const conversation = {
             id: uuidv4(),
             timestamp,
