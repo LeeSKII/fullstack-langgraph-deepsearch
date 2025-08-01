@@ -63,7 +63,7 @@ def send_node_update(node_name: str, status: NodeStatus, data: Optional[Dict] = 
     send_stream_message_update(node_name, message, status.value)
 
 
-def agent_router(state: OverallState, llm, system_prompt: str) -> Command[Literal['clarify_with_user', 'assistant']]:
+def agent_router(state: OverallState) -> Command[Literal['clarify_with_user', 'assistant']]:
     """判断是否需要深度研究的智能路由"""
     send_node_update('agent_router', NodeStatus.RUNNING)
     
@@ -73,7 +73,7 @@ def agent_router(state: OverallState, llm, system_prompt: str) -> Command[Litera
     format_instructions = parser.get_format_instructions()
     
     router_system_prompt = f"你是一个智能分析路由，判断用户的提问是否需要进行深度研究，还是可以直接回答,你给出的回答必须使用json格式，满足以下格式要求：{format_instructions}"
-    structured_output_model = llm.with_structured_output(schema=AnalyzeRouter).with_retry(stop_after_attempt=3)
+    structured_output_model = config.llm.with_structured_output(schema=AnalyzeRouter).with_retry(stop_after_attempt=3)
     
     response = structured_output_model.invoke([
         {'role': 'system', 'content': router_system_prompt},
@@ -91,11 +91,11 @@ def agent_router(state: OverallState, llm, system_prompt: str) -> Command[Litera
 
 
 @error_handler("clarify_with_user")
-def clarify_with_user(state: OverallState, llm: Any) -> Command[Literal['analyze_need_web_search', '__end__']]:
+def clarify_with_user(state: OverallState) -> Command[Literal['analyze_need_web_search', '__end__']]:
     """与用户进行交流，澄清用户的需求"""
     send_node_update('clarify_with_user', NodeStatus.RUNNING)
     
-    model = llm.with_structured_output(ClarifyUser).with_retry(stop_after_attempt=3)
+    model = config.llm.with_structured_output(ClarifyUser).with_retry(stop_after_attempt=3)
     messages = state['messages']
     
     response = model.invoke([{
@@ -125,7 +125,7 @@ def clarify_with_user(state: OverallState, llm: Any) -> Command[Literal['analyze
 
 
 @error_handler("analyze_need_web_search")
-def analyze_need_web_search(state: OverallState, llm: Any, system_prompt: str) -> OverallState:
+def analyze_need_web_search(state: OverallState) -> OverallState:
     """判断是否需要进行网页搜索"""
     send_node_update('analyze_need_web_search', NodeStatus.RUNNING)
     
@@ -134,8 +134,8 @@ def analyze_need_web_search(state: OverallState, llm: Any, system_prompt: str) -
     query = state['query']
     prompt = analyze_need_web_search_instructions.format(query=query, format_instructions=format_instructions)
     
-    response = llm.invoke([
-        {'role': 'system', 'content': system_prompt},
+    response = config.llm.invoke([
+        {'role': 'system', 'content': config.system_prompt},
         *state['messages'],
         {"role": "user", "content": prompt}
     ])
@@ -162,7 +162,7 @@ def analyze_need_web_search(state: OverallState, llm: Any, system_prompt: str) -
 
 
 @error_handler("generate_search_query")
-def generate_search_query(state: OverallState, llm: Any, system_prompt: str) -> OverallState:
+def generate_search_query(state: OverallState) -> OverallState:
     """生成搜索查询"""
     send_node_update('generate_search_query', NodeStatus.RUNNING)
     
@@ -172,9 +172,9 @@ def generate_search_query(state: OverallState, llm: Any, system_prompt: str) -> 
     parser = PydanticOutputParser(pydantic_object=SearchQueryList)
     format_instructions = parser.get_format_instructions()
     prompt = query_writer_instructions.format(query=query, format_instructions=format_instructions,number_queries=generated_queries_number)
-    llm_with_structured =  llm.with_structured_output(SearchQueryList).with_retry(stop_after_attempt=3)
+    llm_with_structured = config.llm.with_structured_output(SearchQueryList).with_retry(stop_after_attempt=3)
     response:SearchQueryList = llm_with_structured.invoke([
-        {'role': 'system', 'content': system_prompt},
+        {'role': 'system', 'content': config.system_prompt},
         *messages,
         {"role": "user", "content": prompt}
     ])
@@ -194,7 +194,7 @@ def generate_search_query(state: OverallState, llm: Any, system_prompt: str) -> 
     }
 
 @error_handler("web_search")
-def web_search(state: WebSearchState, tavily_client: Any) -> OverallState:
+def web_search(state: WebSearchState) -> OverallState:
     """网页搜索"""
     random_uuid = uuid.uuid4()
     random_uuid_str = str(random_uuid)
@@ -202,7 +202,7 @@ def web_search(state: WebSearchState, tavily_client: Any) -> OverallState:
     
     query = state['search_query']
     
-    response = tavily_client.search(query, search_depth='basic')
+    response = config.tavily_client.search(query, search_depth='basic')
     search_result = response['results']
     # sources_gathered = [WebSearchDoc(title=item['title'], url=item['url'], content=item['content']) for item in search_result]
     sources_gathered = [{"title": item['title'], "url": item['url'], "content": item['content']} for item in search_result]
@@ -216,7 +216,7 @@ def web_search(state: WebSearchState, tavily_client: Any) -> OverallState:
 
 
 @error_handler("evaluate_search_results")
-def evaluate_search_results(state: OverallState, llm: Any, system_prompt: str) -> OverallState:
+def evaluate_search_results(state: OverallState) -> OverallState:
     """评估搜索结果,是否足够可以回答用户提问"""
     send_node_update('evaluate_search_results', NodeStatus.RUNNING)
     
@@ -232,9 +232,9 @@ def evaluate_search_results(state: OverallState, llm: Any, system_prompt: str) -
         format_instructions=format_instructions,
         summaries=current_search_results
     )
-    llm_with_structured =  llm.with_structured_output(EvaluateWebSearchResult).with_retry(stop_after_attempt=3)
+    llm_with_structured = config.llm.with_structured_output(EvaluateWebSearchResult).with_retry(stop_after_attempt=3)
     response:EvaluateWebSearchResult = llm_with_structured.invoke([
-        {'role': 'system', 'content': system_prompt},
+        {'role': 'system', 'content': config.system_prompt},
         *messages,
         {"role": "user", "content": prompt}
     ])
@@ -261,7 +261,7 @@ def evaluate_search_results(state: OverallState, llm: Any, system_prompt: str) -
 
 
 @error_handler("assistant_node")
-def assistant_node(state: OverallState, llm: Any, system_prompt: str) -> OverallState:
+def assistant_node(state: OverallState) -> OverallState:
     """助手响应"""
     send_node_update('assistant_node', NodeStatus.RUNNING)
     
@@ -270,7 +270,7 @@ def assistant_node(state: OverallState, llm: Any, system_prompt: str) -> Overall
     if state['isNeedWebSearch']:
         summaries = state['web_search_results_list']
         send_messages = [
-            {'role': 'system', 'content': system_prompt},
+            {'role': 'system', 'content': config.system_prompt},
             *state['messages'],
             {
                 "role": "user",
@@ -279,11 +279,11 @@ def assistant_node(state: OverallState, llm: Any, system_prompt: str) -> Overall
         ]
     else:
         send_messages = [
-            {'role': 'system', 'content': system_prompt},
+            {'role': 'system', 'content': config.system_prompt},
             *state['messages']
         ]
     
-    ai_response = llm.invoke(send_messages)
+    ai_response = config.llm.invoke(send_messages)
     logging.info(f"助手响应生成成功: {query}")
     
     messages = [

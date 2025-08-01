@@ -14,7 +14,7 @@ from langchain_core.messages import message_to_dict
 
 from .models import InputData
 from .workflow import create_workflow
-from .config import get_config, get_llm, get_tavily_client, get_system_prompt
+from .config import get_config
 from .constants import ERROR_QUERY_EMPTY, ERROR_MESSAGES_NOT_LIST, MAX_SEARCH_LOOP
 
 # 创建路由器
@@ -22,11 +22,7 @@ router = APIRouter()
 
 # 初始化工作流
 config = get_config()
-app = create_workflow(
-    llm=get_llm(),
-    tavily_client=get_tavily_client(),
-    system_prompt=get_system_prompt(),
-)
+app = create_workflow()
 
 
 @router.get("/{query}", tags=["search"])
