@@ -173,39 +173,19 @@ export const useChat = () => {
     if (parsed.data.type === "node_execute") {
       if (parsed.data.data.status === "running") {
         setCurrentNode(parsed.node);
-        setSteps((prev) => [
-          ...prev,
-          {
-            id: timestamp,
-            node: parsed.data.node,
-            status: "pending",
-          },
-        ]);
       }
 
       if (parsed.data.data.status === "done") {
         setSteps((prev) => {
-          if (prev.length === 0) {
-            return [
-              {
-                id: timestamp,
-                node: parsed.node,
-                data: parsed.data.data.data,
-                status: "success",
-              },
-            ];
-          } else {
-            const tempArr = prev.slice(0, -1);
-            return [
-              ...tempArr,
-              {
-                id: timestamp,
-                node: parsed.node,
-                data: parsed.data.data.data,
-                status: "success",
-              },
-            ];
-          }
+          return [
+            ...prev,
+            {
+              id: timestamp,
+              node: parsed.node,
+              data: parsed.data.data.data,
+              status: "success",
+            },
+          ];
         });
       }
     }

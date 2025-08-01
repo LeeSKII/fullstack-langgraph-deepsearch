@@ -94,7 +94,7 @@ Output Format:
 - Format your response as a JSON object with these exact keys:
    - "is_sufficient": true or false
    - "knowledge_gap": Describe what information is missing or needs clarification
-   - "follow_up_queries": Write a specific question to address this gap
+   - "follow_up_queries": Write a specific question to address this gap, for efficient web search, don't generate more than 3 queries
 
 Example:
 ```json

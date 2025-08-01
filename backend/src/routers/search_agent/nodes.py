@@ -3,6 +3,7 @@
 包含工作流中的所有节点处理函数
 """
 
+from ast import Str
 import time
 import logging
 from functools import wraps
@@ -12,6 +13,7 @@ from typing_extensions import Literal
 from fastapi import HTTPException
 from langchain.output_parsers import PydanticOutputParser
 from enum import Enum
+import uuid
 
 from sqlalchemy import over
 
@@ -185,7 +187,9 @@ def generate_search_query(state: OverallState, llm: Any, system_prompt: str) -> 
     send_node_update(
         'generate_search_query',
         NodeStatus.DONE,
-        response.model_dump()
+        {
+            "query": '|'.join(response.query)
+        }
     )
 
     return {
@@ -195,7 +199,9 @@ def generate_search_query(state: OverallState, llm: Any, system_prompt: str) -> 
 @error_handler("web_search")
 def web_search(state: WebSearchState, tavily_client: Any) -> OverallState:
     """网页搜索"""
-    send_node_update('web_search', NodeStatus.RUNNING)
+    random_uuid = uuid.uuid4()
+    random_uuid_str = str(random_uuid)
+    send_node_update('web_search', NodeStatus.RUNNING, {"id": random_uuid_str})
     
     query = state['search_query']
     
@@ -204,7 +210,7 @@ def web_search(state: WebSearchState, tavily_client: Any) -> OverallState:
     # sources_gathered = [WebSearchDoc(title=item['title'], url=item['url'], content=item['content']) for item in search_result]
     sources_gathered = [{"title": item['title'], "url": item['url'], "content": item['content']} for item in search_result]
     
-    send_node_update('web_search', NodeStatus.DONE, {"web_search_results": sources_gathered})
+    send_node_update('web_search', NodeStatus.DONE, {"id": random_uuid_str,"web_search_results": sources_gathered})
     
     return {
         "web_search_results_list": sources_gathered,
@@ -241,7 +247,12 @@ def evaluate_search_results(state: OverallState, llm: Any, system_prompt: str) -
     send_node_update(
         'evaluate_search_results',
         NodeStatus.DONE,
-        response.model_dump()
+        {
+            "is_sufficient": response.is_sufficient,
+            "followup_search_query": "|".join(response.follow_up_queries),
+            "knowledge_gap": response.knowledge_gap,
+            "web_search_query_wait_list": "|".join(response.follow_up_queries),
+        }
     )
     
     return {

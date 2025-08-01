@@ -54,32 +54,32 @@ export function ActivityTimeline({ processedEvents, isLoading }) {
   // 检查事件是否有实际数据
   const hasEventData = (eventItem) => {
     if (!eventItem.data) return false;
-    
+
     // 对于特殊节点，即使没有数据也显示
     if (eventItem.node === "thinking" || eventItem.node === "generating") {
       return true;
     }
-    
+
     // 对于 web_search 节点，检查是否有 web_search_results
     if (eventItem.node === "web_search" && eventItem.data?.web_search_results) {
       return true;
     }
-    
+
     // 检查字符串类型数据
-    if (typeof eventItem.data === 'string') {
-      return eventItem.data.trim() !== '';
+    if (typeof eventItem.data === "string") {
+      return eventItem.data.trim() !== "";
     }
-    
+
     // 检查数组类型数据
     if (Array.isArray(eventItem.data)) {
       return eventItem.data.length > 0;
     }
-    
+
     // 检查对象类型数据
-    if (typeof eventItem.data === 'object' && eventItem.data !== null) {
+    if (typeof eventItem.data === "object" && eventItem.data !== null) {
       return Object.keys(eventItem.data).length > 0;
     }
-    
+
     return false;
   };
 
@@ -124,7 +124,7 @@ export function ActivityTimeline({ processedEvents, isLoading }) {
                   if (!hasEventData(eventItem)) {
                     return null;
                   }
-                  
+
                   return (
                     <div key={index} className="relative pl-8 pb-4">
                       {index < processedEvents.length - 1 ||
@@ -152,9 +152,7 @@ export function ActivityTimeline({ processedEvents, isLoading }) {
                                     <WebSearchCard
                                       url={search_data.url}
                                       title={search_data.title}
-                                      content={
-                                        search_data.content || search_data.snippet
-                                      }
+                                      content={search_data.content}
                                     />
                                   </div>
                                 )
@@ -164,7 +162,6 @@ export function ActivityTimeline({ processedEvents, isLoading }) {
                             <div className="flex flex-wrap gap-4 mt-2">
                               <JsonRender
                                 data={{
-                                  query: eventItem.data?.query,
                                   isNeedWebSearch:
                                     eventItem.data?.isNeedWebSearch,
                                   reason: eventItem.data?.reason,
@@ -175,12 +172,7 @@ export function ActivityTimeline({ processedEvents, isLoading }) {
                           ) : eventItem.node === "generate_search_query" ? (
                             <JsonRender
                               data={{
-                                web_search_query:
-                                  eventItem.data?.web_search_query,
-                                web_search_depth:
-                                  eventItem.data?.web_search_depth,
-                                reason: eventItem.data?.reason,
-                                confidence: eventItem.data?.confidence,
+                                query: eventItem.data?.query,
                               }}
                             />
                           ) : eventItem.node === "evaluate_search_results" ? (
@@ -190,9 +182,6 @@ export function ActivityTimeline({ processedEvents, isLoading }) {
                                   is_sufficient: eventItem.data?.is_sufficient,
                                   followup_search_query:
                                     eventItem.data?.followup_search_query,
-                                  search_depth: eventItem.data?.search_depth,
-                                  reason: eventItem.data?.reason,
-                                  confidence: eventItem.data?.confidence,
                                 }}
                               />
                             </div>
