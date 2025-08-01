@@ -20,7 +20,6 @@ from sqlalchemy import over
 from .models import (
     OverallState, 
     WebSearchJudgement, 
-    WebSearchQuery, 
     EvaluateWebSearchResult, 
     ClarifyUser, 
     AnalyzeRouter,
