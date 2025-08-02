@@ -26,10 +26,12 @@ export const InputForm = ({
   onNewSearch,
   query = "",
   setQuery = () => {},
+  effort = "low",
+  setEffort = () => {},
+  model = "google/gemini-2.0-flash-001",
+  setModel = () => {},
   autoFocus = false,
 }) => {
-  const [effort, setEffort] = useState("low");
-  const [model, setModel] = useState("google/gemini-2.0-flash-001");
   const textareaRef = useRef(null);
 
   // 当autoFocus为true时，在组件挂载后聚焦到输入框
@@ -42,7 +44,7 @@ export const InputForm = ({
   const handleInternalSubmit = (e) => {
     if (e) e.preventDefault();
     if (!query.trim()) return;
-    onSubmit(query, effort, model);
+    onSubmit();
     setQuery("");
   };
 
@@ -137,7 +139,7 @@ export const InputForm = ({
               </SelectContent>
             </Select>
           </div>
-          <div className="flex flex-row gap-2 bg-neutral-700 border-neutral-600 text-neutral-300 focus:ring-neutral-500 rounded-xl rounded-t-sm pl-1 w-full sm:w-auto">
+          {/* <div className="flex flex-row gap-2 bg-neutral-700 border-neutral-600 text-neutral-300 focus:ring-neutral-500 rounded-xl rounded-t-sm pl-1 w-full sm:w-auto">
             <div className="flex flex-row items-center text-sm">
               <Cpu className="h-4 w-4 mr-2" />
               Model
@@ -176,7 +178,7 @@ export const InputForm = ({
                 </SelectItem>
               </SelectContent>
             </Select>
-          </div>
+          </div> */}
         </div>
         <Button
           className="bg-neutral-700 border-neutral-600 text-neutral-300 cursor-pointer rounded-xl rounded-t-sm pl-2 w-full sm:w-auto hover:bg-neutral-800 hover:shadow-[0_0_8px_rgba(163,163,163,0.5)] hover:shadow-neutral-400/50 transform hover:scale-105 transition-all duration-200"

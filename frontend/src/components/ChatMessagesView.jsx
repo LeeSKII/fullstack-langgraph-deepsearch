@@ -1,6 +1,6 @@
 import { ScrollArea } from "./ui/scroll-area";
 import { Loader2, Copy, CopyCheck } from "lucide-react";
-import { InputForm } from "@/components/InputForm";
+import { InputForm } from "./InputForm";
 import { Button } from "./ui/button";
 import { useState, useEffect, useCallback, useRef } from "react";
 import ReactMarkdown from "react-markdown";
@@ -246,6 +246,10 @@ export function ChatMessagesView({
   onNewSearch,
   query,
   setQuery,
+  effort,
+  setEffort,
+  model,
+  setModel,
   onRetry,
 }) {
   const [copiedMessageId, setCopiedMessageId] = useState(null);
@@ -263,14 +267,17 @@ export function ChatMessagesView({
   // 滚动到最新用户消息的函数
   const scrollToLatestUserMessage = useCallback(() => {
     // 查找所有用户消息元素
-    const userMessageElements = document.querySelectorAll('[data-message-type="user"]');
-    
+    const userMessageElements = document.querySelectorAll(
+      '[data-message-type="user"]'
+    );
+
     if (userMessageElements.length > 0) {
       // 获取最后一个（最新的）用户消息元素并滚动到视图顶端
-      const latestUserMessage = userMessageElements[userMessageElements.length - 1];
+      const latestUserMessage =
+        userMessageElements[userMessageElements.length - 1];
       latestUserMessage.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start'
+        behavior: "smooth",
+        block: "start",
       });
     }
   }, []);
@@ -287,7 +294,10 @@ export function ChatMessagesView({
   }, [messages, scrollToLatestUserMessage]);
 
   return (
-    <div className="flex flex-col h-full" style={{ minHeight: 'calc(100vh - 200px)' }}>
+    <div
+      className="flex flex-col h-full"
+      style={{ minHeight: "calc(100vh - 200px)" }}
+    >
       <ScrollArea className="flex-1 overflow-y-auto" ref={scrollAreaRef}>
         <div className="p-4 md:p-6 space-y-2 max-w-4xl mx-auto">
           {messages.map((message, index) => {
@@ -349,6 +359,10 @@ export function ChatMessagesView({
         onNewSearch={onNewSearch}
         query={query}
         setQuery={setQuery}
+        effort={effort}
+        setEffort={setEffort}
+        model={model}
+        setModel={setModel}
       />
     </div>
   );

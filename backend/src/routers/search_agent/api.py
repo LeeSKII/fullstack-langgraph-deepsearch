@@ -91,8 +91,18 @@ async def run_workflow_stream(input_data: InputData):
         HTTPException: 当查询字符串为空时抛出400错误
         HTTPException: 当messages字段不是列表时抛出400错误
     """
+    logging.info(f"开始请求，数据体: {input_data}")
     query = input_data["query"]  # 必填字段直接访问
     messages = input_data.get("messages", [])
+    effort = input_data.get("effort", 'low')
+    max_search_loop = MAX_SEARCH_LOOP  # 默认最大搜索次数
+    # 最大搜索次数
+    if effort == "low":
+        max_search_loop = 3
+    elif effort == "medium":
+        max_search_loop = 5
+    elif effort == "high":
+        max_search_loop = 10
     
     # 输入验证
     if not query or not query.strip():
@@ -101,9 +111,6 @@ async def run_workflow_stream(input_data: InputData):
     # 验证messages字段
     if messages and not isinstance(messages, list):
         raise HTTPException(status_code=400, detail=ERROR_MESSAGES_NOT_LIST)
-    
-    max_search_loop = MAX_SEARCH_LOOP  # 最大搜索次数
-    search_loop = 0  # 当前搜索次数
     
     async def stream_updates() -> AsyncGenerator[str, None]:
         try:
@@ -117,7 +124,7 @@ async def run_workflow_stream(input_data: InputData):
                     "query": query,
                     "messages": messages,
                     "max_search_loop": max_search_loop,
-                    "search_loop": search_loop
+                    "search_loop": 0 # 当前搜索次数
                 }, 
                 stream_mode=["messages", "custom"]
             ):

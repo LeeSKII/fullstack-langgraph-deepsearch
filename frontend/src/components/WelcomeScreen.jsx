@@ -6,6 +6,10 @@ export const WelcomeScreen = ({
   isLoading,
   query,
   setQuery,
+  effort,
+  setEffort,
+  model,
+  setModel,
 }) => {
   return (
   <div className="h-full flex flex-col items-center justify-center text-center px-4 flex-1 w-full max-w-3xl mx-auto gap-4">
@@ -25,6 +29,10 @@ export const WelcomeScreen = ({
         hasHistory={false}
         query={query}
         setQuery={setQuery}
+        effort={effort}
+        setEffort={setEffort}
+        model={model}
+        setModel={setModel}
         autoFocus={true}
       />
     </div>

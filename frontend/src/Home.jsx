@@ -16,9 +16,13 @@ const Home = () => {
     drawerVisible,
     history,
     currentConversationId,
+    effort,
+    model,
     scrollAreaRef,
     setQuery,
     setDrawerVisible,
+    setEffort,
+    setModel,
     handleSubmit,
     handleCancel,
     handleNewSearch,
@@ -42,11 +46,9 @@ const Home = () => {
       // 更新消息状态
       setMessages(newMessages);
 
-      // 清空输入框
-      setQuery("");
-
-      // 重新提交查询
-      handleSubmit(query);
+      // 设置查询内容并提交
+      setQuery(query);
+      handleSubmit();
     }
   };
 
@@ -74,6 +76,10 @@ const Home = () => {
               isLoading={isStreaming}
               query={query}
               setQuery={setQuery}
+              effort={effort}
+              setEffort={setEffort}
+              model={model}
+              setModel={setModel}
             />
           ) : error ? (
             <div className="flex flex-col items-center justify-center h-full">
@@ -101,6 +107,10 @@ const Home = () => {
               onNewSearch={handleNewSearch}
               query={query}
               setQuery={setQuery}
+              effort={effort}
+              setEffort={setEffort}
+              model={model}
+              setModel={setModel}
               onRetry={handleRetry}
             />
           )}

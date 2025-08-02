@@ -10,6 +10,8 @@ export const useChat = () => {
   const [streamMessage, setStreamMessage] = useState("");
   const [currentNode, setCurrentNode] = useState("");
   const [drawerVisible, setDrawerVisible] = useState(false);
+  const [effort, setEffort] = useState("low");
+  const [model, setModel] = useState("google/gemini-2.0-flash-001");
   const [history, setHistory] = useState(() => {
     try {
       const savedHistory = localStorage.getItem("chatHistory");
@@ -49,58 +51,56 @@ export const useChat = () => {
   }, []);
 
   // 保存当前对话到历史记录
-  const saveConversationToHistory = useCallback(
-    (messages, currentConversationId) => {
-      if (messages.length > 0) {
-        if (currentConversationId) {
-          setHistory((prevHistory) => {
-            const existingIndex = prevHistory.findIndex(
-              (item) => item.id === currentConversationId
-            );
-            if (existingIndex >= 0) {
-              // 检查消息是否相等
-              const existingMessages = prevHistory[existingIndex].messages;
-              const isMessagesEqual = JSON.stringify(existingMessages) === JSON.stringify(messages);
-              
-              if (isMessagesEqual) {
-                // 消息相等，不更新
-                return prevHistory;
-              }
-              
-              const timestamp = new Date().toLocaleString();
-              const updatedHistory = [...prevHistory];
-              updatedHistory[existingIndex] = {
-                ...updatedHistory[existingIndex],
-                timestamp,
-                messages: [...messages],
-              };
-              return updatedHistory;
-            } else {
-              const timestamp = new Date().toLocaleString();
-              const conversation = {
-                id: uuidv4(),
-                timestamp,
-                messages: [...messages],
-              };
-              return [conversation, ...prevHistory];
+  const saveConversationToHistory = (messages, currentConversationId) => {
+    if (messages.length > 0) {
+      if (currentConversationId) {
+        setHistory((prevHistory) => {
+          const existingIndex = prevHistory.findIndex(
+            (item) => item.id === currentConversationId
+          );
+          if (existingIndex >= 0) {
+            // 检查消息是否相等
+            const existingMessages = prevHistory[existingIndex].messages;
+            const isMessagesEqual =
+              JSON.stringify(existingMessages) === JSON.stringify(messages);
+
+            if (isMessagesEqual) {
+              // 消息相等，不更新
+              return prevHistory;
             }
-          });
-        } else {
-          const timestamp = new Date().toLocaleString();
-          const conversation = {
-            id: uuidv4(),
-            timestamp,
-            messages: [...messages],
-          };
-          setHistory((prevHistory) => [conversation, ...prevHistory]);
-        }
+
+            const timestamp = new Date().toLocaleString();
+            const updatedHistory = [...prevHistory];
+            updatedHistory[existingIndex] = {
+              ...updatedHistory[existingIndex],
+              timestamp,
+              messages: [...messages],
+            };
+            return updatedHistory;
+          } else {
+            const timestamp = new Date().toLocaleString();
+            const conversation = {
+              id: uuidv4(),
+              timestamp,
+              messages: [...messages],
+            };
+            return [conversation, ...prevHistory];
+          }
+        });
+      } else {
+        const timestamp = new Date().toLocaleString();
+        const conversation = {
+          id: uuidv4(),
+          timestamp,
+          messages: [...messages],
+        };
+        setHistory((prevHistory) => [conversation, ...prevHistory]);
       }
-    },
-    []
-  );
+    }
+  };
 
   // 处理新搜索
-  const handleNewSearch = useCallback(() => {
+  const handleNewSearch = () => {
     setCurrentConversationId(null);
     setSteps([]);
     setMessages([]);
@@ -109,10 +109,10 @@ export const useChat = () => {
     setCurrentNode("");
     setError(null);
     setQuery("");
-  }, []);
+  };
 
   // 恢复历史对话
-  const restoreConversation = useCallback((conversation) => {
+  const restoreConversation = (conversation) => {
     // 如果点击的是当前对话，则只关闭抽屉，不重新加载
     if (conversation.id === currentConversationId) {
       setDrawerVisible(false);
@@ -131,17 +131,17 @@ export const useChat = () => {
       .filter((msg) => msg.type === "assistant")
       .pop();
     setStreamMessage(lastAssistantMessage ? lastAssistantMessage.content : "");
-  }, [currentConversationId]);
+  };
 
   // 删除历史对话
-  const deleteConversation = useCallback((conversationId) => {
+  const deleteConversation = (conversationId) => {
     setHistory((prevHistory) =>
       prevHistory.filter((conversation) => conversation.id !== conversationId)
     );
-  }, []);
+  };
 
   // 解析事件数据函数
-  const parseEventData = useCallback((eventData) => {
+  const parseEventData = (eventData) => {
     try {
       const lines = eventData.split("\n");
       let eventType = "messages";
@@ -160,25 +160,25 @@ export const useChat = () => {
       console.error("Failed to parse event data:", e);
       return { eventType: "error", data: "Invalid event format" };
     }
-  }, []);
+  };
 
   // 处理错误事件函数
-  const handleErrorEvent = useCallback((data) => {
+  const handleErrorEvent = (data) => {
     try {
       const errorData = JSON.parse(data);
       setError(errorData.error || "Unknown error");
     } catch (e) {
       setError("Invalid error format");
     }
-  }, []);
+  };
 
   // 处理消息事件函数
-  const handleMessagesEvent = useCallback((parsed) => {
+  const handleMessagesEvent = (parsed) => {
     setStreamMessage((prev) => prev + parsed.data.data.content);
-  }, []);
+  };
 
   // 处理custom数据，目前用来指示节点转换
-  const handleCustomEvent = useCallback((parsed) => {
+  const handleCustomEvent = (parsed) => {
     if (process.env.NODE_ENV === "development") {
       console.log("Custom event from node:", parsed);
       console.log("Event type:", parsed.data.type);
@@ -220,51 +220,41 @@ export const useChat = () => {
         parsed.data.data.messages[parsed.data.data.messages.length - 1],
       ]);
     }
-  }, []);
+  };
 
   // 处理事件函数
-  const processEvent = useCallback(
-    (eventData) => {
-      const { eventType, data } = parseEventData(eventData);
+  const processEvent = (eventData) => {
+    const { eventType, data } = parseEventData(eventData);
 
-      if (eventType === "error") {
-        handleErrorEvent(data);
-      } else if (eventType === "end") {
-        setIsStreaming(false);
-        if (!currentConversationId) {
-          setCurrentConversationId(uuidv4());
-        }
-        if (process.env.NODE_ENV === "development") {
-          console.log("End event received, steps:", steps);
-        }
-      } else if (data) {
-        if (data === ":keep-alive") return;
-
-        try {
-          const parsed = JSON.parse(data);
-
-          if (parsed.mode === "messages") {
-            handleMessagesEvent(parsed);
-          } else if (parsed.mode === "custom") {
-            handleCustomEvent(parsed);
-          }
-        } catch (e) {
-          console.error("Failed to parse event data:", e);
-        }
+    if (eventType === "error") {
+      handleErrorEvent(data);
+    } else if (eventType === "end") {
+      setIsStreaming(false);
+      if (!currentConversationId) {
+        setCurrentConversationId(uuidv4());
       }
-    },
-    [
-      parseEventData,
-      handleErrorEvent,
-      handleMessagesEvent,
-      handleCustomEvent,
-      currentConversationId,
-      steps,
-    ]
-  );
+      if (process.env.NODE_ENV === "development") {
+        console.log("End event received, steps:", steps);
+      }
+    } else if (data) {
+      if (data === ":keep-alive") return;
+
+      try {
+        const parsed = JSON.parse(data);
+
+        if (parsed.mode === "messages") {
+          handleMessagesEvent(parsed);
+        } else if (parsed.mode === "custom") {
+          handleCustomEvent(parsed);
+        }
+      } catch (e) {
+        console.error("Failed to parse event data:", e);
+      }
+    }
+  };
 
   // 停止流式传输函数
-  const stopStream = useCallback(() => {
+  const stopStream = () => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       setIsStreaming(false);
@@ -273,91 +263,85 @@ export const useChat = () => {
         return [...tempArr, { type: "assistant", content: streamMessage }];
       });
     }
-  }, [streamMessage]);
+  };
 
   // 开始流式传输函数
-  const startStream = useCallback(
-    async (inputValue, effort, model) => {
-      if (!inputValue.trim()) {
-        setError("查询不能为空");
-        return;
+  const startStream = async () => {
+    if (!query.trim()) {
+      setError("查询不能为空");
+      return;
+    }
+
+    setError(null);
+    setSteps([]);
+    setMessages((prev) => [
+      ...prev,
+      { type: "user", content: query },
+      { type: "assistant", content: "Researching..." },
+    ]);
+    setStreamMessage("");
+    setIsStreaming(true);
+
+    try {
+      abortControllerRef.current = new AbortController();
+
+      const response = await fetch("/llm/deep/search/stream", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ query, messages, effort, model }),
+        signal: abortControllerRef.current.signal,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(
+          `HTTP error! status: ${response.status}, message: ${errorText}`
+        );
       }
 
-      setError(null);
-      setSteps([]);
-      setMessages((prev) => [
-        ...prev,
-        { type: "user", content: inputValue },
-        { type: "assistant", content: "Researching..." },
-      ]);
-      setStreamMessage("");
-      setIsStreaming(true);
-
-      try {
-        abortControllerRef.current = new AbortController();
-
-        const response = await fetch("/llm/deep/search/stream", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ query: inputValue, messages, effort, model }),
-          signal: abortControllerRef.current.signal,
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(
-            `HTTP error! status: ${response.status}, message: ${errorText}`
-          );
-        }
-
-        if (!response.body) {
-          throw new Error("ReadableStream not supported");
-        }
-
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = "";
-
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-
-          let eventEndIndex;
-          while ((eventEndIndex = buffer.indexOf("\n\n")) !== -1) {
-            const eventData = buffer.substring(0, eventEndIndex);
-            buffer = buffer.substring(eventEndIndex + 2);
-            processEvent(eventData);
-          }
-        }
-      } catch (err) {
-        if (err.name !== "AbortError") {
-          console.error("Streaming error:", err);
-          setError(err.message || "流式传输失败");
-        }
-      } finally {
-        setIsStreaming(false);
-        abortControllerRef.current = null;
+      if (!response.body) {
+        throw new Error("ReadableStream not supported");
       }
-    },
-    [messages, processEvent]
-  );
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        let eventEndIndex;
+        while ((eventEndIndex = buffer.indexOf("\n\n")) !== -1) {
+          const eventData = buffer.substring(0, eventEndIndex);
+          buffer = buffer.substring(eventEndIndex + 2);
+          processEvent(eventData);
+        }
+      }
+    } catch (err) {
+      if (err.name !== "AbortError") {
+        console.error("Streaming error:", err);
+        setError(err.message || "流式传输失败");
+      }
+    } finally {
+      setIsStreaming(false);
+      abortControllerRef.current = null;
+    }
+  };
 
   // 处理提交事件
-  const handleSubmit = useCallback(
-    (inputValue, effort, model) => {
-      startStream(inputValue, effort, model);
-    },
-    [startStream]
-  );
+  const handleSubmit = () => {
+    startStream();
+  };
 
   // 处理取消事件
-  const handleCancel = useCallback(() => {
+  const handleCancel = () => {
     stopStream();
-  }, [stopStream]);
+  };
 
   return {
     // State
@@ -371,12 +355,16 @@ export const useChat = () => {
     drawerVisible,
     history,
     currentConversationId,
+    effort,
+    model,
     abortControllerRef,
     scrollAreaRef,
 
     // Actions
     setQuery,
     setDrawerVisible,
+    setEffort,
+    setModel,
     handleSubmit,
     handleCancel,
     handleNewSearch,

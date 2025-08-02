@@ -104,4 +104,6 @@ class OverallState(TypedDict):
 class InputData(TypedDict):
     """API输入数据模型"""
     query: str  # 必填字段
+    effort: str  # 必填字段
+    model: NotRequired[str]  # 可选字段
     messages: NotRequired[list[dict]]  # 可选字段
