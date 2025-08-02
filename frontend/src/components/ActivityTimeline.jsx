@@ -1,9 +1,4 @@
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader } from "./ui/card";
 import { ScrollArea } from "./ui/scroll-area";
 import {
   Loader2,
@@ -84,7 +79,7 @@ export function ActivityTimeline({ processedEvents, isLoading }) {
   };
 
   return (
-    <Card className="border-none rounded-lg bg-neutral-700 max-h-96">
+    <Card className="border-none rounded-lg bg-neutral-700 max-h-96 py-3 gap-2">
       <CardHeader>
         <CardDescription className="flex items-center justify-between">
           <div
@@ -142,7 +137,7 @@ export function ActivityTimeline({ processedEvents, isLoading }) {
                           {eventItem.node === "web_search" &&
                           eventItem.data &&
                           eventItem.data.web_search_results ? (
-                            <div className="flex flex-wrap gap-4 mt-2">
+                            <div className="flex flex-wrap gap-1 mt-1">
                               {eventItem.data.web_search_results.map(
                                 (search_data) => (
                                   <div
@@ -159,7 +154,7 @@ export function ActivityTimeline({ processedEvents, isLoading }) {
                               )}
                             </div>
                           ) : eventItem.node === "analyze_need_web_search" ? (
-                            <div className="flex flex-wrap gap-4 mt-2">
+                            <div className="flex flex-wrap  mt-2">
                               <JsonRender
                                 data={{
                                   isNeedWebSearch:
@@ -176,7 +171,7 @@ export function ActivityTimeline({ processedEvents, isLoading }) {
                               }}
                             />
                           ) : eventItem.node === "evaluate_search_results" ? (
-                            <div className="flex flex-wrap gap-4 mt-2">
+                            <div className="flex flex-wrap  mt-2">
                               <JsonRender
                                 data={{
                                   is_sufficient: eventItem.data?.is_sufficient,

@@ -1,6 +1,6 @@
-import * as React from "react"
+import * as React from "react";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
 function Card({ className, ...props }) {
   return (
@@ -12,7 +12,7 @@ function Card({ className, ...props }) {
       )}
       {...props}
     />
-  )
+  );
 }
 
 function CardHeader({ className, ...props }) {
@@ -25,7 +25,7 @@ function CardHeader({ className, ...props }) {
       )}
       {...props}
     />
-  )
+  );
 }
 
 function CardTitle({ className, ...props }) {
@@ -35,7 +35,7 @@ function CardTitle({ className, ...props }) {
       className={cn("leading-none font-semibold", className)}
       {...props}
     />
-  )
+  );
 }
 
 function CardDescription({ className, ...props }) {
@@ -45,7 +45,7 @@ function CardDescription({ className, ...props }) {
       className={cn("text-muted-foreground text-sm", className)}
       {...props}
     />
-  )
+  );
 }
 
 function CardAction({ className, ...props }) {
@@ -58,7 +58,7 @@ function CardAction({ className, ...props }) {
       )}
       {...props}
     />
-  )
+  );
 }
 
 function CardContent({ className, ...props }) {
@@ -68,7 +68,7 @@ function CardContent({ className, ...props }) {
       className={cn("px-6", className)}
       {...props}
     />
-  )
+  );
 }
 
 function CardFooter({ className, ...props }) {
@@ -78,7 +78,7 @@ function CardFooter({ className, ...props }) {
       className={cn("flex items-center px-6 [.border-t]:pt-6", className)}
       {...props}
     />
-  )
+  );
 }
 
 export {
@@ -89,4 +89,4 @@ export {
   CardAction,
   CardDescription,
   CardContent,
-}
+};
