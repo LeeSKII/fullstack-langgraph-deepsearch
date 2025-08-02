@@ -73,7 +73,7 @@ export const InputForm = ({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Searching anything you want..."
+          placeholder="需要检索的信息..."
           className={`w-full text-neutral-100 placeholder-neutral-500 resize-none border-0 focus:outline-none focus:ring-0 outline-none focus-visible:ring-0 shadow-none
                         md:text-base  min-h-[48px] max-h-[200px]`}
           rows={1}
@@ -100,7 +100,7 @@ export const InputForm = ({
               } p-1 cursor-pointer rounded-full transition-all duration-200 text-base`}
               disabled={isSubmitDisabled}
             >
-              Search
+              搜索
               <Send className="h-5 w-5" />
             </Button>
           )}
@@ -111,7 +111,7 @@ export const InputForm = ({
           <div className="flex flex-row gap-2 bg-neutral-700 border-neutral-600 text-neutral-300 focus:ring-neutral-500 rounded-xl rounded-t-sm pl-1 w-full sm:w-auto">
             <div className="flex flex-row items-center text-sm">
               <Brain className="h-4 w-4 mr-2" />
-              Effort
+              研究层次
             </div>
             <Select value={effort} onValueChange={setEffort}>
               <SelectTrigger className="w-full sm:w-[120px] bg-transparent border-none cursor-pointer">
@@ -122,19 +122,19 @@ export const InputForm = ({
                   value="low"
                   className="hover:bg-neutral-600 focus:bg-neutral-600 cursor-pointer"
                 >
-                  Low
+                  低
                 </SelectItem>
                 <SelectItem
                   value="medium"
                   className="hover:bg-neutral-600 focus:bg-neutral-600 cursor-pointer"
                 >
-                  Medium
+                  中
                 </SelectItem>
                 <SelectItem
                   value="high"
                   className="hover:bg-neutral-600 focus:bg-neutral-600 cursor-pointer"
                 >
-                  High
+                  高
                 </SelectItem>
               </SelectContent>
             </Select>
@@ -197,7 +197,7 @@ export const InputForm = ({
           }}
         >
           <SquarePen size={16} />
-          New Search
+          重新开始
         </Button>
       </div>
     </form>

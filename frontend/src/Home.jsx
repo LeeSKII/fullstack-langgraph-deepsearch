@@ -59,7 +59,7 @@ const Home = () => {
         <Button
           variant="ghost"
           onClick={() => setDrawerVisible(true)}
-          className="bg-neutral-700 hover:bg-neutral-600 text-neutral-300"
+          className="bg-neutral-700 cursor-pointer hover:bg-neutral-600 text-neutral-300"
         >
           <History />
           <span className="hidden sm:inline">历史记录</span>

@@ -1,5 +1,5 @@
 import { ScrollArea } from "./ui/scroll-area";
-import { Loader2, Copy, CopyCheck } from "lucide-react";
+import { Loader2, Copy, CopyCheck, RotateCcw } from "lucide-react";
 import { InputForm } from "./InputForm";
 import { Button } from "./ui/button";
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -228,7 +228,7 @@ const AiMessageBubble = ({
           className="cursor-pointer bg-neutral-700 border-neutral-600 text-neutral-300"
           onClick={handleRetry}
         >
-          <div className="flex items-center gap-1">Retry</div>
+          <RotateCcw className="h-4 w-4" />
         </Button>
       </div>
     </div>
