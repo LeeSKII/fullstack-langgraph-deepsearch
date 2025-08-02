@@ -111,7 +111,7 @@ export const InputForm = ({
           <div className="flex flex-row gap-2 bg-neutral-700 border-neutral-600 text-neutral-300 focus:ring-neutral-500 rounded-xl rounded-t-sm pl-1 w-full sm:w-auto">
             <div className="flex flex-row items-center text-sm">
               <Brain className="h-4 w-4 mr-2" />
-              研究层次
+              Effort
             </div>
             <Select value={effort} onValueChange={setEffort}>
               <SelectTrigger className="w-full sm:w-[120px] bg-transparent border-none cursor-pointer">
@@ -122,24 +122,24 @@ export const InputForm = ({
                   value="low"
                   className="hover:bg-neutral-600 focus:bg-neutral-600 cursor-pointer"
                 >
-                  低
+                  Low
                 </SelectItem>
                 <SelectItem
                   value="medium"
                   className="hover:bg-neutral-600 focus:bg-neutral-600 cursor-pointer"
                 >
-                  中
+                  Medium
                 </SelectItem>
                 <SelectItem
                   value="high"
                   className="hover:bg-neutral-600 focus:bg-neutral-600 cursor-pointer"
                 >
-                  高
+                  High
                 </SelectItem>
               </SelectContent>
             </Select>
           </div>
-          {/* <div className="flex flex-row gap-2 bg-neutral-700 border-neutral-600 text-neutral-300 focus:ring-neutral-500 rounded-xl rounded-t-sm pl-1 w-full sm:w-auto">
+          <div className="flex flex-row gap-2 bg-neutral-700 border-neutral-600 text-neutral-300 focus:ring-neutral-500 rounded-xl rounded-t-sm pl-1 w-full sm:w-auto">
             <div className="flex flex-row items-center text-sm">
               <Cpu className="h-4 w-4 mr-2" />
               Model
@@ -178,7 +178,7 @@ export const InputForm = ({
                 </SelectItem>
               </SelectContent>
             </Select>
-          </div> */}
+          </div>
         </div>
         <Button
           className="bg-neutral-700 border-neutral-600 text-neutral-300 cursor-pointer rounded-xl rounded-t-sm pl-2 w-full sm:w-auto hover:bg-neutral-800 hover:shadow-[0_0_8px_rgba(163,163,163,0.5)] hover:shadow-neutral-400/50 transform hover:scale-105 transition-all duration-200"
@@ -197,7 +197,7 @@ export const InputForm = ({
           }}
         >
           <SquarePen size={16} />
-          重新开始
+          New Research
         </Button>
       </div>
     </form>
