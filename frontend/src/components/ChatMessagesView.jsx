@@ -2,7 +2,7 @@ import { ScrollArea } from "./ui/scroll-area";
 import { Loader2, Copy, CopyCheck } from "lucide-react";
 import { InputForm } from "@/components/InputForm";
 import { Button } from "./ui/button";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import { cn } from "@/lib/utils";
 import { Badge } from "./ui/badge";
@@ -259,10 +259,37 @@ export function ChatMessagesView({
       console.error("Failed to copy text: ", err);
     }
   };
+
+  // 滚动到最新用户消息的函数
+  const scrollToLatestUserMessage = useCallback(() => {
+    // 查找所有用户消息元素
+    const userMessageElements = document.querySelectorAll('[data-message-type="user"]');
+    
+    if (userMessageElements.length > 0) {
+      // 获取最后一个（最新的）用户消息元素并滚动到视图顶端
+      const latestUserMessage = userMessageElements[userMessageElements.length - 1];
+      latestUserMessage.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }
+  }, []);
+
+  // 监听新搜索事件，当用户提交第一条消息时滚动到该消息
+  useEffect(() => {
+    // 当有消息且正在加载时，尝试滚动到最新用户消息
+    if (messages.length > 0 && isLoading) {
+      // 延迟滚动以确保DOM已完全渲染
+      setTimeout(() => {
+        scrollToLatestUserMessage();
+      }, 100);
+    }
+  }, [messages, isLoading, scrollToLatestUserMessage]);
+
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full" style={{ minHeight: 'calc(100vh - 200px)' }}>
       <ScrollArea className="flex-1 overflow-y-auto" ref={scrollAreaRef}>
-        <div className="p-4 md:p-6 space-y-2 max-w-4xl mx-auto pt-16">
+        <div className="p-4 md:p-6 space-y-2 max-w-4xl mx-auto">
           {messages.map((message, index) => {
             const isLast = index === messages.length - 1;
             return (
@@ -281,6 +308,7 @@ export function ChatMessagesView({
                   className={`flex items-start gap-3 ${
                     message.type === "user" ? "justify-end" : ""
                   }`}
+                  data-message-type={message.type}
                 >
                   {message.type === "user" ? (
                     <HumanMessageBubble
