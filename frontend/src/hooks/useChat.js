@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { v4 as uuidv4 } from "uuid";
 
 export const useChat = () => {
@@ -37,7 +37,7 @@ export const useChat = () => {
   // 监听messages变量的变化，在对话结束时保存记录
   useEffect(() => {
     if (!isStreaming && messages.length > 0) {
-      saveConversationToHistory(messages, currentConversationId);
+      saveConversationToHistory();
     }
   }, [messages, isStreaming, currentConversationId]);
 
@@ -51,7 +51,7 @@ export const useChat = () => {
   }, []);
 
   // 保存当前对话到历史记录
-  const saveConversationToHistory = (messages, currentConversationId) => {
+  const saveConversationToHistory = () => {
     if (messages.length > 0) {
       if (currentConversationId) {
         setHistory((prevHistory) => {
