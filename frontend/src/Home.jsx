@@ -59,7 +59,7 @@ const Home = () => {
           className="bg-neutral-700 hover:bg-neutral-600 text-neutral-300"
         >
           <History />
-          历史记录
+          <span className="hidden sm:inline">历史记录</span>
         </Button>
       </div>
 
