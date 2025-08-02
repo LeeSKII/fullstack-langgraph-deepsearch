@@ -6,7 +6,8 @@ export const WelcomeScreen = ({
   isLoading,
   query,
   setQuery,
-}) => (
+}) => {
+  return (
   <div className="h-full flex flex-col items-center justify-center text-center px-4 flex-1 w-full max-w-3xl mx-auto gap-4">
     <div>
       <h1 className="text-5xl md:text-6xl font-semibold text-neutral-100 mb-3">
@@ -24,6 +25,7 @@ export const WelcomeScreen = ({
         hasHistory={false}
         query={query}
         setQuery={setQuery}
+        autoFocus={true}
       />
     </div>
     <p className="text-xs text-neutral-500">
@@ -32,4 +34,5 @@ export const WelcomeScreen = ({
       Author: LeeSki. */}
     </p>
   </div>
-);
+  );
+};

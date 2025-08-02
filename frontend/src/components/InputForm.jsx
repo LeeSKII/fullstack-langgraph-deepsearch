@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "./ui/button";
 import {
   SquarePen,
@@ -26,10 +26,18 @@ export const InputForm = ({
   onNewSearch,
   query = "",
   setQuery = () => {},
+  autoFocus = false,
 }) => {
   const [effort, setEffort] = useState("low");
   const [model, setModel] = useState("google/gemini-2.0-flash-001");
   const textareaRef = useRef(null);
+
+  // 当autoFocus为true时，在组件挂载后聚焦到输入框
+  useEffect(() => {
+    if (autoFocus && textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, [autoFocus]);
 
   const handleInternalSubmit = (e) => {
     if (e) e.preventDefault();
@@ -178,10 +186,12 @@ export const InputForm = ({
             if (onNewSearch) {
               onNewSearch();
             }
-            // 聚焦到输入框
-            if (textareaRef.current) {
-              textareaRef.current.focus();
-            }
+            // 使用setTimeout确保在状态更新后聚焦到输入框
+            setTimeout(() => {
+              if (textareaRef.current) {
+                textareaRef.current.focus();
+              }
+            }, 0);
           }}
         >
           <SquarePen size={16} />
