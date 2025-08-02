@@ -14,6 +14,7 @@ export const HistoryDrawer = ({
   history,
   restoreConversation,
   deleteConversation,
+  currentConversationId,
 }) => {
   return (
     <>
@@ -57,7 +58,11 @@ export const HistoryDrawer = ({
                     .map((conversation) => (
                     <div
                       key={conversation.id}
-                      className="flex flex-row justify-between items-center p-3 rounded-lg bg-neutral-700 hover:bg-neutral-600 transition-colors duration-200 cursor-pointer w-full"
+                      className={`flex flex-row justify-between items-center p-3 rounded-lg transition-colors duration-200 cursor-pointer w-full ${
+                        conversation.id === currentConversationId
+                          ? "bg-blue-600 hover:bg-blue-500"
+                          : "bg-neutral-700 hover:bg-neutral-600"
+                      }`}
                       onClick={() => restoreConversation(conversation)}
                     >
                       <div className="flex justify-between items-start">

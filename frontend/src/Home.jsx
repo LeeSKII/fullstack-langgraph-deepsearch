@@ -15,6 +15,7 @@ const Home = () => {
     streamMessage,
     drawerVisible,
     history,
+    currentConversationId,
     scrollAreaRef,
     setQuery,
     setDrawerVisible,
@@ -113,6 +114,7 @@ const Home = () => {
         history={history}
         restoreConversation={restoreConversation}
         deleteConversation={deleteConversation}
+        currentConversationId={currentConversationId}
       />
     </>
   );

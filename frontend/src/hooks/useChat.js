@@ -113,6 +113,12 @@ export const useChat = () => {
 
   // 恢复历史对话
   const restoreConversation = useCallback((conversation) => {
+    // 如果点击的是当前对话，则只关闭抽屉，不重新加载
+    if (conversation.id === currentConversationId) {
+      setDrawerVisible(false);
+      return;
+    }
+
     setDrawerVisible(false);
     setCurrentConversationId(conversation.id);
     setSteps([]);
@@ -125,7 +131,7 @@ export const useChat = () => {
       .filter((msg) => msg.type === "assistant")
       .pop();
     setStreamMessage(lastAssistantMessage ? lastAssistantMessage.content : "");
-  }, []);
+  }, [currentConversationId]);
 
   // 删除历史对话
   const deleteConversation = useCallback((conversationId) => {
