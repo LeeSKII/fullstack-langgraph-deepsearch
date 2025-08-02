@@ -275,16 +275,16 @@ export function ChatMessagesView({
     }
   }, []);
 
-  // 监听新搜索事件，当用户提交第一条消息时滚动到该消息
+  // 监听消息变化，当有新消息或切换历史记录时滚动到最新用户消息
   useEffect(() => {
-    // 当有消息且正在加载时，尝试滚动到最新用户消息
-    if (messages.length > 0 && isLoading) {
+    // 当有消息时，尝试滚动到最新用户消息
+    if (messages.length > 0) {
       // 延迟滚动以确保DOM已完全渲染
       setTimeout(() => {
         scrollToLatestUserMessage();
       }, 100);
     }
-  }, [messages, isLoading, scrollToLatestUserMessage]);
+  }, [messages, scrollToLatestUserMessage]);
 
   return (
     <div className="flex flex-col h-full" style={{ minHeight: 'calc(100vh - 200px)' }}>
