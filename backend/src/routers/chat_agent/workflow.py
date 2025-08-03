@@ -1,6 +1,8 @@
+from math import log
 from langgraph.graph import StateGraph, START, END
 import logging
 from langchain_openai import ChatOpenAI
+from langgraph.config import get_stream_writer
 from typing import TypedDict
 from typing_extensions import Annotated
 import operator
@@ -19,15 +21,27 @@ llm = ChatOpenAI(model=model_name, api_key=api_key, base_url=base_url, temperatu
 class OverState(TypedDict):
     messages: Annotated[list[dict],operator.add]
     is_over: bool
+    
+def custom_check_point_output(data: dict):
+    """
+    自定义检查点输出函数
+    
+    Args:
+        data (dict): 要输出的数据
+    """
+    writer = get_stream_writer()  
+    writer(data)
 
 def llm_response(state:OverState):
     logging.info(f"llm_response received state: {state['messages']}")
     response = llm.invoke(state['messages'])
     ai_response_content = response.content
     logging.info(f"llm_response received response: {ai_response_content}")
+    custom_check_point_output({'type':'update_message','message':ai_response_content})
     return {'messages':[{'role':'assistant','content':ai_response_content}]}
 
 def check_state(state:OverState):
+    logging.info(f"check_state running")
     return { 'is_over': True }
 
 graph_builder = StateGraph(OverState)

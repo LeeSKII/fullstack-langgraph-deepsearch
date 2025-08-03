@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse
 from langchain_core.messages import message_to_dict
 import logging
@@ -7,6 +7,8 @@ import json
 import time
 from .workflow import app
 from pydantic import BaseModel
+import asyncio
+from langchain_core.runnables import RunnableConfig
 
 class InputData(BaseModel):
     messages: list[dict]
@@ -15,7 +17,7 @@ class InputData(BaseModel):
 router = APIRouter()
 
 @router.post("/stream", tags=["chat"])
-async def run_workflow_stream(input_data:InputData):
+async def run_workflow_stream(input_data:InputData,request: Request):
     """
     运行流式工作流
     
@@ -30,9 +32,10 @@ async def run_workflow_stream(input_data:InputData):
         HTTPException: 当messages字段不是列表时抛出400错误
     """
     logging.info(f"开始请求，数据体: {input_data}")
-    messages = input_data.messages
+    messages = input_data.messages 
     
-    async def stream_updates() -> AsyncGenerator[str, None]:
+    # 由于中断由API入口介入，持久化数据的过程应该控制在这里，可以由custom自定义事件进行控制
+    async def stream_updates(req: Request) -> AsyncGenerator[str, None]:
         try:
             logging.info(f"开始流式传输:")
             # 添加心跳机制 (每30秒发送空注释)
@@ -42,9 +45,15 @@ async def run_workflow_stream(input_data:InputData):
             async for chunk in app.astream(
                 {
                     "messages": messages,
+                    
                 }, 
-                stream_mode=["messages","updates", "custom"]
+                stream_mode=["messages", "updates", "custom"]
             ):
+                # --- 在循环开始时主动检查连接状态 ---
+                if await req.is_disconnected():
+                    logging.warning("客户端在流式传输过程中断开连接，提前终止。")
+                    break # 退出循环
+                
                 logging.info(f"Chunk: {chunk}")
                 mode, *_ = chunk
                 
@@ -80,7 +89,7 @@ async def run_workflow_stream(input_data:InputData):
                 # 自定义消息用来显示当前正在运行的节点
                 elif mode == "custom":
                     mode, data = chunk
-                    node_name = data['node']
+                    node_name = data.get('node', "")
                     # 结构化响应数据
                     response = {
                         "mode": mode,
@@ -89,6 +98,12 @@ async def run_workflow_stream(input_data:InputData):
                     }
                     yield f"event: custom\ndata: {json.dumps(response)}\n\n"
                     last_sent = time.time()
+            
+        except asyncio.CancelledError:
+            # 这是捕获客户端中断的核心位置
+            logging.warning("检测到客户端连接中断 (CancelledError)，流已终止。")
+            # 此处不需要 yield 任何东西，因为连接已经关闭
+            # 可以在这里执行任何必要的资源清理操作
             
         except Exception as e:
             logging.error(f"流式传输错误, 错误: {str(e)}", exc_info=True)
@@ -103,7 +118,7 @@ async def run_workflow_stream(input_data:InputData):
             yield "event: end\ndata: {}\n\n"
     
     return StreamingResponse(
-        stream_updates(),
+        stream_updates(request),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

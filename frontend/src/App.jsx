@@ -2,6 +2,7 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import WebSearch from "./pages/WebSearch";
 import DeepSearch from "./pages/DeepSearch";
+import Chat from "./pages/Chat";
 
 function App() {
   return (
@@ -22,6 +23,8 @@ function App() {
           <Routes>
             <Route path="/" element={<DeepSearch />} />
             <Route path="/search" element={<WebSearch />} />
+            <Route path="/chat" element={<Chat />} />
+            <Route path="*" element={<div>Not Found</div>} />
           </Routes>
         </main>
       </div>
