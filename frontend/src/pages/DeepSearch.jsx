@@ -1,11 +1,11 @@
-import { WelcomeScreen } from "./components/WelcomeScreen";
-import { ChatMessagesView } from "./components/ChatMessagesView";
-import { Button } from "./components/ui/button";
+import { WelcomeScreen } from "@/components/WelcomeScreen";
+import { ChatMessagesView } from "@/components/ChatMessagesView";
+import { Button } from "@/components/ui/button";
 import { History } from "lucide-react";
-import { HistoryDrawer } from "./components/HistoryDrawer";
-import { useChat } from "./hooks/useChat";
+import { HistoryDrawer } from "@/components/HistoryDrawer";
+import { useChat } from "../hooks/useChat";
 
-const Home = () => {
+const DeepSearch = () => {
   const {
     messages,
     query,
@@ -130,4 +130,4 @@ const Home = () => {
   );
 };
 
-export default Home;
+export default DeepSearch;

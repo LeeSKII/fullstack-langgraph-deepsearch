@@ -1,7 +1,7 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
-import WebSearch from "./WebSearch";
-import Home from "./Home";
+import WebSearch from "./pages/WebSearch";
+import DeepSearch from "./pages/DeepSearch";
 
 function App() {
   return (
@@ -20,7 +20,7 @@ function App() {
 
         <main className="flex-grow">
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<DeepSearch />} />
             <Route path="/search" element={<WebSearch />} />
           </Routes>
         </main>
