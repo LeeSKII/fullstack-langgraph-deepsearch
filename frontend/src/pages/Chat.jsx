@@ -9,14 +9,21 @@ function Chat() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState(null);
   const abortControllerRef = useRef(null);
-  const [streamMessage, setStreamMessage] = useState("");
+  const lastContentRef = useRef("");
+  const messageIdRef = useRef(null);
 
   // 开始流式传输函数
   const startStream = async (endpoint) => {
     setIsStreaming(true);
-    setStreamMessage("");
+    lastContentRef.current = "";
+    messageIdRef.current = null;
     let sendMessages = [...messages, { role: "user", content: sendValue }];
-    setMessages(sendMessages);
+    // 添加一个空的assistant消息用于流式显示
+    let showMessages = [
+      ...sendMessages,
+      { role: "assistant", content: "", streaming: true },
+    ];
+    setMessages(showMessages);
     try {
       // 创建中断控制器
       abortControllerRef.current = new AbortController();
@@ -105,12 +112,15 @@ function Chat() {
   //处理custom数据，目前用来指示节点转换
   const handleCustomEvent = (parsed_data) => {
     if (parsed_data.data.type == "update_message") {
+      // 更新当前流式消息的内容
+      lastContentRef.current = parsed_data.data.message;
       setMessages((prev) => {
-        let temp_arr = prev;
-        return [
-          ...temp_arr,
-          { role: "assistant", content: parsed_data.data.message },
-        ];
+        const newMessages = [...prev];
+        const lastMessage = newMessages[newMessages.length - 1];
+        if (lastMessage && lastMessage.role === "assistant" && lastMessage.streaming) {
+          lastMessage.content = parsed_data.data.message;
+        }
+        return newMessages;
       });
     }
   };
@@ -120,9 +130,39 @@ function Chat() {
 
   // 处理消息事件函数
   const handleMessagesEvent = (parsed_data) => {
-    setStreamMessage((prev) => {
-      return prev + parsed_data.data.data.content;
-    });
+    // 更新最后一个assistant消息的内容（流式消息）
+    const messageChunkId = parsed_data.data.data.id;
+    const newContent = parsed_data.data.data.content;
+    
+    // 如果是新的消息ID，重置内容
+    if (messageIdRef.current !== messageChunkId) {
+      messageIdRef.current = messageChunkId;
+      lastContentRef.current = "";
+    }
+    
+    // 检查新内容是否已经存在于当前内容中
+    if (!lastContentRef.current.includes(newContent)) {
+      lastContentRef.current += newContent;
+      
+      setMessages((prev) => {
+        const newMessages = [...prev];
+        const lastMessage = newMessages[newMessages.length - 1];
+        if (
+          lastMessage &&
+          lastMessage.role === "assistant" &&
+          lastMessage.streaming
+        ) {
+          // 如果是第一个chunk，设置消息ID
+          if (!lastMessage.messageId) {
+            lastMessage.messageId = messageChunkId;
+          }
+          
+          // 使用ref中的内容，确保不会重复
+          lastMessage.content = lastContentRef.current;
+        }
+        return newMessages;
+      });
+    }
   };
 
   // 处理事件函数
@@ -133,6 +173,19 @@ function Chat() {
     if (eventType === "error") {
       handleErrorEvent(data);
     } else if (eventType === "end") {
+      // 流式传输结束，将最后一个消息标记为非流式
+      setMessages((prev) => {
+        const newMessages = [...prev];
+        const lastMessage = newMessages[newMessages.length - 1];
+        if (
+          lastMessage &&
+          lastMessage.role === "assistant" &&
+          lastMessage.streaming
+        ) {
+          delete lastMessage.streaming;
+        }
+        return newMessages;
+      });
       setIsStreaming(false);
     } else if (data) {
       // 忽略心跳包
@@ -158,12 +211,20 @@ function Chat() {
   const stopStream = () => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
-      setIsStreaming(false);
-      //暂存最后的临时消息
+      // 将最后一个消息标记为非流式
       setMessages((prev) => {
-        let temp_arr = prev.slice(0, -1);
-        return [...temp_arr, { role: "assistant", content: streamMessage }];
+        const newMessages = [...prev];
+        const lastMessage = newMessages[newMessages.length - 1];
+        if (
+          lastMessage &&
+          lastMessage.role === "assistant" &&
+          lastMessage.streaming
+        ) {
+          delete lastMessage.streaming;
+        }
+        return newMessages;
       });
+      setIsStreaming(false);
     }
   };
   const rolesAsObject = {
@@ -188,14 +249,19 @@ function Chat() {
             if (message.role === "assistant") {
               return (
                 <Bubble
+                  key={i}
                   placement="start"
-                  content={message.content}
+                  content={
+                    message.content || (message.streaming ? "正在思考..." : "")
+                  }
                   avatar={{ icon: <Bot />, style: { background: "#1d3acdff" } }}
+                  className={message.streaming ? "opacity-90" : ""}
                 />
               );
             } else {
               return (
                 <Bubble
+                  key={i}
                   placement="end"
                   content={message.content}
                   avatar={{ icon: <User />, style: { background: "#87d068" } }}
@@ -204,14 +270,6 @@ function Chat() {
             }
           })}
         </div>
-        {isStreaming && (
-          <Bubble
-            className="mt-3"
-            placement="start"
-            content={streamMessage}
-            avatar={{ icon: <Bot />, style: { background: "#1d3acdff" } }}
-          />
-        )}
       </div>
       <Sender
         submitType="shiftEnter"
