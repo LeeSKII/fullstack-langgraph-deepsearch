@@ -117,7 +117,11 @@ function Chat() {
       setMessages((prev) => {
         const newMessages = [...prev];
         const lastMessage = newMessages[newMessages.length - 1];
-        if (lastMessage && lastMessage.role === "assistant" && lastMessage.streaming) {
+        if (
+          lastMessage &&
+          lastMessage.role === "assistant" &&
+          lastMessage.streaming
+        ) {
           lastMessage.content = parsed_data.data.message;
         }
         return newMessages;
@@ -133,17 +137,17 @@ function Chat() {
     // 更新最后一个assistant消息的内容（流式消息）
     const messageChunkId = parsed_data.data.data.id;
     const newContent = parsed_data.data.data.content;
-    
+
     // 如果是新的消息ID，重置内容
     if (messageIdRef.current !== messageChunkId) {
       messageIdRef.current = messageChunkId;
       lastContentRef.current = "";
     }
-    
+
     // 检查新内容是否已经存在于当前内容中
     if (!lastContentRef.current.includes(newContent)) {
       lastContentRef.current += newContent;
-      
+
       setMessages((prev) => {
         const newMessages = [...prev];
         const lastMessage = newMessages[newMessages.length - 1];
@@ -156,7 +160,7 @@ function Chat() {
           if (!lastMessage.messageId) {
             lastMessage.messageId = messageChunkId;
           }
-          
+
           // 使用ref中的内容，确保不会重复
           lastMessage.content = lastContentRef.current;
         }
@@ -243,7 +247,7 @@ function Chat() {
 
   return (
     <div>
-      <div className="flex-1 w-1/3 h-full overflow-y-auto bg-white rounded-lg shadow p-6">
+      <div className="flex-1 w-full h-full overflow-y-auto bg-white rounded-lg shadow p-6">
         <div className="flex flex-col gap-3">
           {messages.map((message, i) => {
             if (message.role === "assistant") {
