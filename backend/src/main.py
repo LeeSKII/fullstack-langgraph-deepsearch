@@ -12,7 +12,8 @@ import logging
 
 app = FastAPI()
 
-app.include_router(search.router,prefix="/llm/deep/search")
+app.include_router(search.search_router,prefix="/llm/deep/search")
+app.include_router(search.chat_router,prefix="/llm/chat")
 
 @app.get("/")
 def read_root():
