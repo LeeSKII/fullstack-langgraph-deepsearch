@@ -5,6 +5,10 @@ import { Drawer } from "antd";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
+import Markdown from "../components/MarkdownView";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm"; //使用remark-gfm插件 渲染例如表格部分
+import rehypeRaw from "rehype-raw"; //使用插件渲染markdown中的html部分
 
 function Chat() {
   const endpoint = "/llm/chat/stream";
@@ -106,6 +110,17 @@ function Chat() {
       prevHistory.filter((conversation) => conversation.id !== conversationId)
     );
   };
+  const renderMarkdown = (content) => {
+    return (
+      <ReactMarkdown
+        components={Markdown}
+        remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeRaw]}
+      >
+        {typeof content === "string" ? content : JSON.stringify(content)}
+      </ReactMarkdown>
+    );
+  };
   return (
     <div className="container mx-auto p-2 h-screen flex flex-col font-sans antialiased">
       {/* History Button */}
@@ -182,6 +197,7 @@ function Chat() {
                     key={i}
                     placement="start"
                     content={message.content}
+                    messageRender={renderMarkdown}
                     avatar={{
                       icon: <Bot />,
                       style: { background: "#1d3acdff" },
