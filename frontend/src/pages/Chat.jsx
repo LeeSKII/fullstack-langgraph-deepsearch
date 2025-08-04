@@ -141,19 +141,7 @@ function Chat() {
     if (eventType === "error") {
       handleErrorEvent(data);
     } else if (eventType === "end") {
-      // 流式传输结束，将最后一个消息标记为非流式
-      setMessages((prev) => {
-        const newMessages = [...prev];
-        const lastMessage = newMessages[newMessages.length - 1];
-        if (
-          lastMessage &&
-          lastMessage.role === "assistant" &&
-          lastMessage.streaming
-        ) {
-          delete lastMessage.streaming;
-        }
-        return newMessages;
-      });
+      setSendValue("");
       setIsStreaming(false);
     } else if (data) {
       // 忽略心跳包
