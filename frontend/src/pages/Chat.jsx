@@ -128,6 +128,17 @@ function Chat() {
     // 更新最后一个assistant消息的内容（流式消息）
     const messageChunkId = parsed_data.data.data.id;
     const newContent = parsed_data.data.data.content;
+    setMessages((prev) => {
+      const lastAiMessage = prev[prev.length - 1];
+      if (lastAiMessage.role === "assistant") {
+        const tempContent = lastAiMessage.content + newContent;
+        return [
+          ...prev.slice(0, -1),
+          { role: "assistant", content: tempContent },
+        ];
+      }
+    });
+
     setStreamMessage((prev) => {
       return prev + newContent;
     });
@@ -175,7 +186,6 @@ function Chat() {
     <div>
       <div className="flex-1 w-full h-full overflow-y-auto bg-white rounded-lg shadow p-6">
         <div className="flex flex-col gap-3">
-          {streamMessage}
           {messages.map((message, i) => {
             if (message.role === "assistant") {
               return (
