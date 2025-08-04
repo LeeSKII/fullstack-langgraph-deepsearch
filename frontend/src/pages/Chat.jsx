@@ -167,19 +167,6 @@ function Chat() {
   const stopStream = () => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
-      // 将最后一个消息标记为非流式
-      setMessages((prev) => {
-        const newMessages = [...prev];
-        const lastMessage = newMessages[newMessages.length - 1];
-        if (
-          lastMessage &&
-          lastMessage.role === "assistant" &&
-          lastMessage.streaming
-        ) {
-          delete lastMessage.streaming;
-        }
-        return newMessages;
-      });
       setIsStreaming(false);
     }
   };
