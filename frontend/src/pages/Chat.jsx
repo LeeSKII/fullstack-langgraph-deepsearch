@@ -110,6 +110,7 @@ function Chat() {
       prevHistory.filter((conversation) => conversation.id !== conversationId)
     );
   };
+  // 自定义渲染Markdown
   const renderMarkdown = (content) => {
     return (
       <ReactMarkdown
