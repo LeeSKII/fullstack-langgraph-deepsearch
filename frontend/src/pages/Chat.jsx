@@ -122,6 +122,22 @@ function Chat() {
       </ReactMarkdown>
     );
   };
+  // 定义聊天角色的配置对象
+  const rolesAsObject = {
+    assistant: {
+      placement: "start",
+      avatar: { icon: <Bot />, style: { background: "#1d3acdff" } },
+      style: {
+        maxWidth: 1200,
+      },
+      messageRender: renderMarkdown,
+    },
+    user: {
+      placement: "end",
+      avatar: { icon: <User />, style: { background: "#87d068" } },
+      messageRender: renderMarkdown,
+    },
+  };
   return (
     <div className="container mx-auto p-2 h-screen flex flex-col font-sans antialiased">
       {/* History Button */}
@@ -189,7 +205,7 @@ function Chat() {
         )}
       </Drawer>
       <div className="flex flex-col gap-4 h-11/12">
-        <div className="flex-1 w-full h-full overflow-y-auto rounded-lg shadow p-6">
+        {/* <div className="flex-1 w-full h-full overflow-y-auto rounded-lg shadow p-6">
           <div className="flex flex-col gap-3">
             {messages.map((message, i) => {
               if (message.role === "assistant") {
@@ -221,7 +237,24 @@ function Chat() {
               }
             })}
           </div>
-        </div>
+        </div> */}
+        {/* 使用Bubble list可以监听auto scroll */}
+        <Bubble.List
+          roles={rolesAsObject}
+          autoScroll={true}
+          items={messages.map((message, i) => {
+            let loading = false;
+            if (message?.status === "loading") {
+              loading = true;
+            }
+            return {
+              key: i,
+              role: message.role,
+              content: message.content,
+              loading: loading,
+            };
+          })}
+        />
       </div>
       <div className="flex flex-row gap-2 justify-center items-center w-full mt-2 h-1/12 bg-white rounded-lg shadow p-4 z-10">
         <Sender
