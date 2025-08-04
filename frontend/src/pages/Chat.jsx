@@ -1,27 +1,26 @@
-import { useState, useRef } from "react";
+import { useState, useRef, use } from "react";
 import { Sender, Bubble } from "@ant-design/x";
-import { Bot, User } from "lucide-react";
+import { Bot, CloudCog, User } from "lucide-react";
 
 function Chat() {
   const endpoint = "/llm/chat/stream";
   const [sendValue, setSendValue] = useState("");
+  const [streamMessage, setStreamMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState(null);
   const abortControllerRef = useRef(null);
-  const lastContentRef = useRef("");
-  const messageIdRef = useRef(null);
 
   // 开始流式传输函数
   const startStream = async (endpoint) => {
     setIsStreaming(true);
-    lastContentRef.current = "";
-    messageIdRef.current = null;
+    setStreamMessage("");
+
     let sendMessages = [...messages, { role: "user", content: sendValue }];
     // 添加一个空的assistant消息用于流式显示
     let showMessages = [
       ...sendMessages,
-      { role: "assistant", content: "", streaming: true },
+      { role: "assistant", content: "", status: "loading" },
     ];
     setMessages(showMessages);
     try {
@@ -113,18 +112,10 @@ function Chat() {
   const handleCustomEvent = (parsed_data) => {
     if (parsed_data.data.type == "update_message") {
       // 更新当前流式消息的内容
-      lastContentRef.current = parsed_data.data.message;
+      const ai_response = parsed_data.data.message;
       setMessages((prev) => {
-        const newMessages = [...prev];
-        const lastMessage = newMessages[newMessages.length - 1];
-        if (
-          lastMessage &&
-          lastMessage.role === "assistant" &&
-          lastMessage.streaming
-        ) {
-          lastMessage.content = parsed_data.data.message;
-        }
-        return newMessages;
+        const tempArr = prev.slice(0, -1);
+        return [...tempArr, { role: "assistant", content: ai_response }];
       });
     }
   };
@@ -137,36 +128,9 @@ function Chat() {
     // 更新最后一个assistant消息的内容（流式消息）
     const messageChunkId = parsed_data.data.data.id;
     const newContent = parsed_data.data.data.content;
-
-    // 如果是新的消息ID，重置内容
-    if (messageIdRef.current !== messageChunkId) {
-      messageIdRef.current = messageChunkId;
-      lastContentRef.current = "";
-    }
-
-    // 检查新内容是否已经存在于当前内容中
-    if (!lastContentRef.current.includes(newContent)) {
-      lastContentRef.current += newContent;
-
-      setMessages((prev) => {
-        const newMessages = [...prev];
-        const lastMessage = newMessages[newMessages.length - 1];
-        if (
-          lastMessage &&
-          lastMessage.role === "assistant" &&
-          lastMessage.streaming
-        ) {
-          // 如果是第一个chunk，设置消息ID
-          if (!lastMessage.messageId) {
-            lastMessage.messageId = messageChunkId;
-          }
-
-          // 使用ref中的内容，确保不会重复
-          lastMessage.content = lastContentRef.current;
-        }
-        return newMessages;
-      });
-    }
+    setStreamMessage((prev) => {
+      return prev + newContent;
+    });
   };
 
   // 处理事件函数
@@ -231,35 +195,21 @@ function Chat() {
       setIsStreaming(false);
     }
   };
-  const rolesAsObject = {
-    assistant: {
-      placement: "start",
-      avatar: { icon: <Bot />, style: { background: "#1d3acdff" } },
-      style: {
-        maxWidth: 1200,
-      },
-    },
-    user: {
-      placement: "end",
-      avatar: { icon: <User />, style: { background: "#87d068" } },
-    },
-  };
 
   return (
     <div>
       <div className="flex-1 w-full h-full overflow-y-auto bg-white rounded-lg shadow p-6">
         <div className="flex flex-col gap-3">
+          {streamMessage}
           {messages.map((message, i) => {
             if (message.role === "assistant") {
               return (
                 <Bubble
                   key={i}
                   placement="start"
-                  content={
-                    message.content || (message.streaming ? "正在思考..." : "")
-                  }
+                  content={message.content}
                   avatar={{ icon: <Bot />, style: { background: "#1d3acdff" } }}
-                  className={message.streaming ? "opacity-90" : ""}
+                  loading={message.status === "loading"}
                 />
               );
             } else {
