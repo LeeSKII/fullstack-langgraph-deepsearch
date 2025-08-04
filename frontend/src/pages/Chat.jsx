@@ -256,7 +256,7 @@ function Chat() {
           })}
         />
       </div>
-      <div className="flex flex-row gap-2 justify-center items-center w-full mt-2 h-1/12 bg-white rounded-lg shadow p-4 z-10">
+      <div className="fixed bottom-0 sm:left-10 sm:right-10 w-full sm:w-10/12 mx-auto mt-2 min-h-1/13 bg-white rounded-lg shadow p-1 z-10">
         <Sender
           submitType="shiftEnter"
           value={sendValue}
