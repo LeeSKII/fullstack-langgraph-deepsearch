@@ -11,27 +11,23 @@ import remarkGfm from "remark-gfm"; //使用remark-gfm插件 渲染例如表格�
 import rehypeRaw from "rehype-raw"; //使用插件渲染markdown中的html部分
 
 // 提取 ChatInput 组件以避免全局重渲染
-const ChatInput = memo(({
-  value,
-  onChange,
-  onSubmit,
-  onCancel,
-  loading
-}) => {
-  // 内部状态管理，减少对父组件的依赖
-  const [internalValue, setInternalValue] = useState(value);
-  
-  // 使用 useEffect 同步外部状态变化
-  useEffect(() => {
-    setInternalValue(value);
-  }, [value]);
-  
+const ChatInput = memo(({ initialValue, onSubmit, onCancel, loading }) => {
+  // 完全内部状态管理，不依赖父组件的状态
+  const [internalValue, setInternalValue] = useState(initialValue);
+
   // 内部变化处理函数
   const handleChange = useCallback((e) => {
     setInternalValue(e);
-    onChange(e);
-  }, [onChange]);
-  
+  }, []);
+
+  // 内部提交处理函数
+  const handleSubmit = useCallback(async () => {
+    if (internalValue.trim()) {
+      await onSubmit(internalValue);
+      setInternalValue("");
+    }
+  }, [internalValue, onSubmit]);
+
   return (
     <div className="fixed bottom-0 sm:left-10 sm:right-10 w-full sm:w-10/12 mx-auto mt-2 min-h-1/13 bg-white rounded-lg shadow p-1 z-10">
       <Sender
@@ -40,7 +36,7 @@ const ChatInput = memo(({
         value={internalValue}
         onChange={handleChange}
         loading={loading}
-        onSubmit={onSubmit}
+        onSubmit={handleSubmit}
         onCancel={onCancel}
       />
     </div>
@@ -146,33 +142,39 @@ function Chat() {
     );
   };
   // 使用 useCallback 缓存 renderMarkdown 函数
-  const renderMarkdown = useCallback((content) => {
-    return (
-      <ReactMarkdown
-        components={Markdown}
-        remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeRaw]}
-      >
-        {typeof content === "string" ? content : JSON.stringify(content)}
-      </ReactMarkdown>
-    );
-  }, [Markdown, remarkGfm, rehypeRaw]);
+  const renderMarkdown = useCallback(
+    (content) => {
+      return (
+        <ReactMarkdown
+          components={Markdown}
+          remarkPlugins={[remarkGfm]}
+          rehypePlugins={[rehypeRaw]}
+        >
+          {typeof content === "string" ? content : JSON.stringify(content)}
+        </ReactMarkdown>
+      );
+    },
+    [Markdown, remarkGfm, rehypeRaw]
+  );
   // 使用 useMemo 缓存聊天角色的配置对象
-  const rolesAsObject = useMemo(() => ({
-    assistant: {
-      placement: "start",
-      avatar: { icon: <Bot />, style: { background: "#1d3acdff" } },
-      style: {
-        maxWidth: 1200,
+  const rolesAsObject = useMemo(
+    () => ({
+      assistant: {
+        placement: "start",
+        avatar: { icon: <Bot />, style: { background: "#1d3acdff" } },
+        style: {
+          maxWidth: 1200,
+        },
+        messageRender: renderMarkdown,
       },
-      messageRender: renderMarkdown,
-    },
-    user: {
-      placement: "end",
-      avatar: { icon: <User />, style: { background: "#87d068" } },
-      messageRender: renderMarkdown,
-    },
-  }), [renderMarkdown]);
+      user: {
+        placement: "end",
+        avatar: { icon: <User />, style: { background: "#87d068" } },
+        messageRender: renderMarkdown,
+      },
+    }),
+    [renderMarkdown]
+  );
 
   // 使用 useMemo 缓存 items 数组，避免每次渲染都重新计算
   const bubbleItems = useMemo(() => {
@@ -190,23 +192,13 @@ function Chat() {
     });
   }, [messages]);
 
-  // 使用 useRef 来存储 message，避免频繁的状态更新
-  const messageRef = useRef("");
-  
   // 使用 useCallback 缓存事件处理函数
-  const handleMessageChange = useCallback((e) => {
-    messageRef.current = e;
-    setMessage(e); // 保留状态更新以触发重新渲染
-  }, []);
-
-  const handleMessageSubmit = useCallback(async () => {
-    const currentMessage = messageRef.current;
-    if (currentMessage.trim()) {
-      await startStream(currentMessage);
+  const handleMessageSubmit = useCallback(async (messageText) => {
+    if (messageText.trim()) {
+      await startStream(messageText);
       setMessage("");
-      messageRef.current = "";
     }
-  }, [startStream]); // 移除 message 依赖
+  }, [startStream]);
 
   const handleCancel = useCallback(() => {
     stopStream();
@@ -320,8 +312,7 @@ function Chat() {
         />
       </div>
       <ChatInput
-        value={message}
-        onChange={handleMessageChange}
+        initialValue={message}
         onSubmit={handleMessageSubmit}
         onCancel={handleCancel}
         loading={isStreaming}
