@@ -255,7 +255,6 @@ function Chat() {
       </div>
       <div className="fixed bottom-0 sm:left-10 sm:right-10 w-full sm:w-10/12 mx-auto mt-2 min-h-1/13 bg-white rounded-lg shadow p-1 z-10">
         <Sender
-          ref={inputRef}
           submitType="shiftEnter"
           placeholder="Press Shift + Enter to send message"
           loading={isStreaming}
