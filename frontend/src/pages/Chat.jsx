@@ -29,7 +29,7 @@ const ChatInput = memo(({ initialValue, onSubmit, onCancel, loading }) => {
   }, [internalValue, onSubmit]);
 
   return (
-    <div className="fixed bottom-0 sm:left-10 sm:right-10 w-full sm:w-10/12 mx-auto mt-2 min-h-1/13 bg-white rounded-lg shadow p-1 z-10">
+    <div className="fixed flex justify-center items-center bottom-0 sm:left-10 sm:right-10 w-full sm:w-10/12 mx-auto mt-2 min-h-1/13 bg-white rounded-lg shadow p-1 z-10">
       <Sender
         submitType="shiftEnter"
         placeholder="Press Shift + Enter to send message"
@@ -193,12 +193,15 @@ function Chat() {
   }, [messages]);
 
   // 使用 useCallback 缓存事件处理函数
-  const handleMessageSubmit = useCallback(async (messageText) => {
-    if (messageText.trim()) {
-      await startStream(messageText);
-      setMessage("");
-    }
-  }, [startStream]);
+  const handleMessageSubmit = useCallback(
+    async (messageText) => {
+      if (messageText.trim()) {
+        await startStream(messageText);
+        setMessage("");
+      }
+    },
+    [startStream]
+  );
 
   const handleCancel = useCallback(() => {
     stopStream();
