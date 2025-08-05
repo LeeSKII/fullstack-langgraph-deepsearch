@@ -21,6 +21,7 @@ function Chat() {
     stopStream,
   } = useBasicChat("/llm/chat/stream");
   const [drawerVisible, setDrawerVisible] = useState(false);
+  const [message, setMessage] = useState("");
   const [history, setHistory] = useState(() => {
     const savedHistory = localStorage.getItem("chatHistory");
     return savedHistory ? JSON.parse(savedHistory) : [];
@@ -257,9 +258,12 @@ function Chat() {
         <Sender
           submitType="shiftEnter"
           placeholder="Press Shift + Enter to send message"
+          value={message}
+          onChange={(e) => setMessage(e)}
           loading={isStreaming}
-          onSubmit={async (message) => {
+          onSubmit={async () => {
             await startStream(message);
+            setMessage("");
           }}
           onCancel={() => {
             stopStream();
