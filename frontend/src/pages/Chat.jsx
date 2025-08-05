@@ -3,12 +3,49 @@ import { Sender, Bubble } from "@ant-design/x";
 import { Bot, User, History, Trash2, CloudCog } from "lucide-react";
 import { Drawer } from "antd";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback, memo } from "react";
 import { v4 as uuidv4 } from "uuid";
 import Markdown from "../components/MarkdownView";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm"; //使用remark-gfm插件 渲染例如表格部分
 import rehypeRaw from "rehype-raw"; //使用插件渲染markdown中的html部分
+
+// 提取 ChatInput 组件以避免全局重渲染
+const ChatInput = memo(({
+  value,
+  onChange,
+  onSubmit,
+  onCancel,
+  loading
+}) => {
+  // 内部状态管理，减少对父组件的依赖
+  const [internalValue, setInternalValue] = useState(value);
+  
+  // 使用 useEffect 同步外部状态变化
+  useEffect(() => {
+    setInternalValue(value);
+  }, [value]);
+  
+  // 内部变化处理函数
+  const handleChange = useCallback((e) => {
+    setInternalValue(e);
+    onChange(e);
+  }, [onChange]);
+  
+  return (
+    <div className="fixed bottom-0 sm:left-10 sm:right-10 w-full sm:w-10/12 mx-auto mt-2 min-h-1/13 bg-white rounded-lg shadow p-1 z-10">
+      <Sender
+        submitType="shiftEnter"
+        placeholder="Press Shift + Enter to send message"
+        value={internalValue}
+        onChange={handleChange}
+        loading={loading}
+        onSubmit={onSubmit}
+        onCancel={onCancel}
+      />
+    </div>
+  );
+});
 
 function Chat() {
   const {
@@ -108,8 +145,8 @@ function Chat() {
       prevHistory.filter((conversation) => conversation.id !== conversationId)
     );
   };
-  // 自定义渲染Markdown
-  const renderMarkdown = (content) => {
+  // 使用 useCallback 缓存 renderMarkdown 函数
+  const renderMarkdown = useCallback((content) => {
     return (
       <ReactMarkdown
         components={Markdown}
@@ -119,9 +156,9 @@ function Chat() {
         {typeof content === "string" ? content : JSON.stringify(content)}
       </ReactMarkdown>
     );
-  };
-  // 定义聊天角色的配置对象
-  const rolesAsObject = {
+  }, [Markdown, remarkGfm, rehypeRaw]);
+  // 使用 useMemo 缓存聊天角色的配置对象
+  const rolesAsObject = useMemo(() => ({
     assistant: {
       placement: "start",
       avatar: { icon: <Bot />, style: { background: "#1d3acdff" } },
@@ -135,7 +172,46 @@ function Chat() {
       avatar: { icon: <User />, style: { background: "#87d068" } },
       messageRender: renderMarkdown,
     },
-  };
+  }), [renderMarkdown]);
+
+  // 使用 useMemo 缓存 items 数组，避免每次渲染都重新计算
+  const bubbleItems = useMemo(() => {
+    return messages.map((message, i) => {
+      let loading = false;
+      if (message?.status === "loading") {
+        loading = true;
+      }
+      return {
+        key: i,
+        role: message.role,
+        content: message.content,
+        loading: loading,
+      };
+    });
+  }, [messages]);
+
+  // 使用 useRef 来存储 message，避免频繁的状态更新
+  const messageRef = useRef("");
+  
+  // 使用 useCallback 缓存事件处理函数
+  const handleMessageChange = useCallback((e) => {
+    messageRef.current = e;
+    setMessage(e); // 保留状态更新以触发重新渲染
+  }, []);
+
+  const handleMessageSubmit = useCallback(async () => {
+    const currentMessage = messageRef.current;
+    if (currentMessage.trim()) {
+      await startStream(currentMessage);
+      setMessage("");
+      messageRef.current = "";
+    }
+  }, [startStream]); // 移除 message 依赖
+
+  const handleCancel = useCallback(() => {
+    stopStream();
+  }, [stopStream]);
+
   return (
     <div className="container mx-auto p-2 h-screen flex flex-col font-sans antialiased">
       {/* History Button */}
@@ -240,36 +316,16 @@ function Chat() {
         <Bubble.List
           roles={rolesAsObject}
           autoScroll={true}
-          items={messages.map((message, i) => {
-            let loading = false;
-            if (message?.status === "loading") {
-              loading = true;
-            }
-            return {
-              key: i,
-              role: message.role,
-              content: message.content,
-              loading: loading,
-            };
-          })}
+          items={bubbleItems}
         />
       </div>
-      <div className="fixed bottom-0 sm:left-10 sm:right-10 w-full sm:w-10/12 mx-auto mt-2 min-h-1/13 bg-white rounded-lg shadow p-1 z-10">
-        <Sender
-          submitType="shiftEnter"
-          placeholder="Press Shift + Enter to send message"
-          value={message}
-          onChange={(e) => setMessage(e)}
-          loading={isStreaming}
-          onSubmit={async () => {
-            await startStream(message);
-            setMessage("");
-          }}
-          onCancel={() => {
-            stopStream();
-          }}
-        />
-      </div>
+      <ChatInput
+        value={message}
+        onChange={handleMessageChange}
+        onSubmit={handleMessageSubmit}
+        onCancel={handleCancel}
+        loading={isStreaming}
+      />
     </div>
   );
 }
