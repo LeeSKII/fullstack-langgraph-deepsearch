@@ -1,8 +1,7 @@
 import { useState, useRef, useCallback } from "react";
 
-export const useBasicChat = (endpoint = "/llm/chat/stream") => {
+export const useBasicChat = (endpoint) => {
   // 状态管理
-  const [sendValue, setSendValue] = useState("");
   const [streamMessage, setStreamMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -84,7 +83,6 @@ export const useBasicChat = (endpoint = "/llm/chat/stream") => {
       if (eventType === "error") {
         handleErrorEvent(data);
       } else if (eventType === "end") {
-        setSendValue("");
         setIsStreaming(false);
       } else if (data) {
         // 忽略心跳包
@@ -115,76 +113,73 @@ export const useBasicChat = (endpoint = "/llm/chat/stream") => {
   );
 
   // 开始流式传输函数
-  const startStream = useCallback(
-    async (customEndpoint = endpoint) => {
-      setIsStreaming(true);
-      setStreamMessage("");
+  const startStream = async (message) => {
+    setIsStreaming(true);
+    setStreamMessage("");
 
-      let sendMessages = [...messages, { role: "user", content: sendValue }];
-      // 添加一个空的assistant消息用于流式显示
-      let showMessages = [
-        ...sendMessages,
-        { role: "assistant", content: "", status: "loading" },
-      ];
-      setMessages(showMessages);
+    let sendMessages = [...messages, { role: "user", content: message }];
+    // 添加一个空的assistant消息用于流式显示
+    let showMessages = [
+      ...sendMessages,
+      { role: "assistant", content: "", status: "loading" },
+    ];
+    setMessages(showMessages);
 
-      try {
-        // 创建中断控制器
-        abortControllerRef.current = new AbortController();
+    try {
+      // 创建中断控制器
+      abortControllerRef.current = new AbortController();
 
-        const response = await fetch(customEndpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ messages: sendMessages }),
-          signal: abortControllerRef.current.signal,
-        });
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ messages: sendMessages }),
+        signal: abortControllerRef.current.signal,
+      });
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(
-            `HTTP error! status: ${response.status}, message: ${errorText}`
-          );
-        }
-
-        if (!response.body) {
-          throw new Error("ReadableStream not supported");
-        }
-
-        // 创建流式读取器
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = "";
-
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) break;
-
-          // 解码并处理数据块
-          buffer += decoder.decode(value, { stream: true });
-
-          // 处理完整的SSE事件 (以\n\n分隔)
-          let eventEndIndex;
-          while ((eventEndIndex = buffer.indexOf("\n\n")) !== -1) {
-            const eventData = buffer.substring(0, eventEndIndex);
-            buffer = buffer.substring(eventEndIndex + 2);
-            console.log(eventData);
-            processEvent(eventData);
-          }
-        }
-      } catch (err) {
-        if (err.name !== "AbortError") {
-          console.error("Streaming error:", err);
-          setError(err.message || "流式传输失败");
-        }
-      } finally {
-        setIsStreaming(false);
-        abortControllerRef.current = null;
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(
+          `HTTP error! status: ${response.status}, message: ${errorText}`
+        );
       }
-    },
-    [endpoint, messages, sendValue, processEvent]
-  );
+
+      if (!response.body) {
+        throw new Error("ReadableStream not supported");
+      }
+
+      // 创建流式读取器
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        // 解码并处理数据块
+        buffer += decoder.decode(value, { stream: true });
+
+        // 处理完整的SSE事件 (以\n\n分隔)
+        let eventEndIndex;
+        while ((eventEndIndex = buffer.indexOf("\n\n")) !== -1) {
+          const eventData = buffer.substring(0, eventEndIndex);
+          buffer = buffer.substring(eventEndIndex + 2);
+          console.log(eventData);
+          processEvent(eventData);
+        }
+      }
+    } catch (err) {
+      if (err.name !== "AbortError") {
+        console.error("Streaming error:", err);
+        setError(err.message || "流式传输失败");
+      }
+    } finally {
+      setIsStreaming(false);
+      abortControllerRef.current = null;
+    }
+  };
 
   // 停止流式传输函数
   const stopStream = useCallback(() => {
@@ -203,7 +198,6 @@ export const useBasicChat = (endpoint = "/llm/chat/stream") => {
 
   // 重置聊天
   const resetChat = useCallback(() => {
-    setSendValue("");
     setStreamMessage("");
     setMessages([]);
     setIsStreaming(false);
@@ -216,7 +210,6 @@ export const useBasicChat = (endpoint = "/llm/chat/stream") => {
 
   return {
     // 状态
-    sendValue,
     streamMessage,
     messages,
     isStreaming,
@@ -224,7 +217,6 @@ export const useBasicChat = (endpoint = "/llm/chat/stream") => {
     abortControllerRef,
 
     // 动作
-    setSendValue,
     setStreamMessage,
     setMessages,
     setIsStreaming,

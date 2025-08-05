@@ -64,7 +64,7 @@ const MarkdownView = {
   code: ({ className, children, ...props }) => (
     <code
       className={cn(
-        "bg-neutral-900 rounded px-1 py-0.5 font-mono text-xs",
+        "bg-neutral-900 text-white rounded px-1 py-0.5 font-mono text-xs",
         className
       )}
       {...props}

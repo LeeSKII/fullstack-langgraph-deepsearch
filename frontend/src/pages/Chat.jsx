@@ -1,9 +1,9 @@
 import { useBasicChat } from "../hooks/useBasicChat";
 import { Sender, Bubble } from "@ant-design/x";
-import { Bot, User, History, Trash2 } from "lucide-react";
+import { Bot, User, History, Trash2, CloudCog } from "lucide-react";
 import { Drawer } from "antd";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { v4 as uuidv4 } from "uuid";
 import Markdown from "../components/MarkdownView";
 import ReactMarkdown from "react-markdown";
@@ -11,18 +11,15 @@ import remarkGfm from "remark-gfm"; //使用remark-gfm插件 渲染例如表格�
 import rehypeRaw from "rehype-raw"; //使用插件渲染markdown中的html部分
 
 function Chat() {
-  const endpoint = "/llm/chat/stream";
   const {
-    sendValue,
     messages,
     isStreaming,
     abortControllerRef,
-    setSendValue,
     setIsStreaming,
     setMessages,
     startStream,
     stopStream,
-  } = useBasicChat(endpoint);
+  } = useBasicChat("/llm/chat/stream");
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [history, setHistory] = useState(() => {
     const savedHistory = localStorage.getItem("chatHistory");
@@ -258,15 +255,12 @@ function Chat() {
       </div>
       <div className="fixed bottom-0 sm:left-10 sm:right-10 w-full sm:w-10/12 mx-auto mt-2 min-h-1/13 bg-white rounded-lg shadow p-1 z-10">
         <Sender
+          ref={inputRef}
           submitType="shiftEnter"
-          value={sendValue}
-          onChange={(v) => {
-            setSendValue(v);
-          }}
           placeholder="Press Shift + Enter to send message"
           loading={isStreaming}
-          onSubmit={() => {
-            startStream();
+          onSubmit={async (message) => {
+            await startStream(message);
           }}
           onCancel={() => {
             stopStream();
