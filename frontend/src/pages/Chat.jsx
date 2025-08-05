@@ -1,9 +1,9 @@
 import { useBasicChat } from "../hooks/useBasicChat";
 import { Sender, Bubble } from "@ant-design/x";
-import { Bot, User, History, Trash2, CloudCog } from "lucide-react";
+import { Bot, User, History, Trash2 } from "lucide-react";
 import { Drawer } from "antd";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect, useRef, useMemo, useCallback, memo } from "react";
+import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { v4 as uuidv4 } from "uuid";
 import Markdown from "../components/MarkdownView";
 import ReactMarkdown from "react-markdown";
@@ -52,7 +52,7 @@ function Chat() {
     setMessages,
     startStream,
     stopStream,
-  } = useBasicChat("/llm/chat/stream");
+  } = useBasicChat(`${import.meta.env.VITE_API_BASE_URL}/llm/chat/stream`);
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [message, setMessage] = useState("");
   const [history, setHistory] = useState(() => {
