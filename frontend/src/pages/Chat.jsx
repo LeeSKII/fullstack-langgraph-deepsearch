@@ -113,8 +113,10 @@ function Chat() {
         });
       } else {
         // 如果当前对话不是从历史记录中恢复的，创建新的历史记录
+        const conversationId = uuidv4();
+        setCurrentConversationId(conversationId);
         const conversation = {
-          id: uuidv4(),
+          id: conversationId,
           timestamp: timestamp,
           messages: [...messages],
         };
