@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 export const InputForm = ({
   onSubmit,
@@ -138,7 +139,12 @@ export const InputForm = ({
               </SelectContent>
             </Select>
           </div>
-          <div className="hidden flex flex-row gap-2 bg-neutral-700 border-neutral-600 text-neutral-300 focus:ring-neutral-500 rounded-xl rounded-t-sm pl-1 w-full sm:w-auto">
+          <div
+            className={cn(
+              "flex flex-row gap-2 bg-neutral-700 border-neutral-600 text-neutral-300 focus:ring-neutral-500 rounded-xl rounded-t-sm pl-1 w-full sm:w-auto",
+              "hidden"
+            )}
+          >
             <div className="flex flex-row items-center text-sm">
               <Cpu className="h-4 w-4 mr-2" />
               Model
