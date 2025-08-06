@@ -244,12 +244,6 @@ export function ChatMessagesView({
   onCancel,
   liveActivityEvents,
   onNewSearch,
-  query,
-  setQuery,
-  effort,
-  setEffort,
-  model,
-  setModel,
   onRetry,
 }) {
   const [copiedMessageId, setCopiedMessageId] = useState(null);
@@ -357,12 +351,6 @@ export function ChatMessagesView({
         onCancel={onCancel}
         hasHistory={messages.length > 0}
         onNewSearch={onNewSearch}
-        query={query}
-        setQuery={setQuery}
-        effort={effort}
-        setEffort={setEffort}
-        model={model}
-        setModel={setModel}
       />
     </div>
   );

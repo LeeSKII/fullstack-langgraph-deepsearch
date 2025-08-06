@@ -24,14 +24,11 @@ export const InputForm = ({
   isLoading,
   hasHistory,
   onNewSearch,
-  query = "",
-  setQuery = () => {},
-  effort = "low",
-  setEffort = () => {},
-  model = "google/gemini-2.0-flash-001",
-  setModel = () => {},
   autoFocus = false,
 }) => {
+  const [query, setQuery] = useState("");
+  const [effort, setEffort] = useState("low");
+  const [model, setModel] = useState("google/gemini-2.0-flash-001");
   const textareaRef = useRef(null);
 
   // 当autoFocus为true时，在组件挂载后聚焦到输入框
@@ -41,19 +38,21 @@ export const InputForm = ({
     }
   }, [autoFocus]);
 
-  const handleInternalSubmit = (e) => {
-    if (e) e.preventDefault();
-    if (!query.trim()) return;
-    onSubmit();
-    setQuery("");
-  };
-
   const handleKeyDown = (e) => {
     // Submit with Ctrl+Enter (Windows/Linux) or Cmd+Enter (Mac)
     if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
-      handleInternalSubmit();
+      if (!query.trim()) return;
+      onSubmit(query, effort);
+      setQuery("");
     }
+  };
+
+  const handleInternalSubmit = (e) => {
+    e.preventDefault();
+    if (!query.trim()) return;
+    onSubmit(query, effort);
+    setQuery("");
   };
 
   const isSubmitDisabled = !query.trim() || isLoading;
@@ -139,7 +138,7 @@ export const InputForm = ({
               </SelectContent>
             </Select>
           </div>
-          <div className="flex flex-row gap-2 bg-neutral-700 border-neutral-600 text-neutral-300 focus:ring-neutral-500 rounded-xl rounded-t-sm pl-1 w-full sm:w-auto">
+          <div className="hidden flex flex-row gap-2 bg-neutral-700 border-neutral-600 text-neutral-300 focus:ring-neutral-500 rounded-xl rounded-t-sm pl-1 w-full sm:w-auto">
             <div className="flex flex-row items-center text-sm">
               <Cpu className="h-4 w-4 mr-2" />
               Model

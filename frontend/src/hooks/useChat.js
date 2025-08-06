@@ -3,18 +3,15 @@ import { v4 as uuidv4 } from "uuid";
 
 export const useChat = () => {
   const [messages, setMessages] = useState([]);
-  const [query, setQuery] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState(null);
   const [steps, setSteps] = useState([]);
   const [streamMessage, setStreamMessage] = useState("");
   const [currentNode, setCurrentNode] = useState("");
   const [drawerVisible, setDrawerVisible] = useState(false);
-  const [effort, setEffort] = useState("low");
-  const [model, setModel] = useState("google/gemini-2.0-flash-001");
   const [history, setHistory] = useState(() => {
     try {
-      const savedHistory = localStorage.getItem("chatHistory");
+      const savedHistory = localStorage.getItem("deepSearchChatHistory");
       return savedHistory ? JSON.parse(savedHistory) : [];
     } catch (e) {
       console.error("Failed to parse chat history:", e);
@@ -28,7 +25,7 @@ export const useChat = () => {
   // 将历史记录保存到localStorage中
   useEffect(() => {
     try {
-      localStorage.setItem("chatHistory", JSON.stringify(history));
+      localStorage.setItem("deepSearchChatHistory", JSON.stringify(history));
     } catch (e) {
       console.error("Failed to save chat history:", e);
     }
@@ -79,8 +76,10 @@ export const useChat = () => {
             return updatedHistory;
           } else {
             const timestamp = new Date().toLocaleString();
+            const currentConversationId = uuidv4();
+            setCurrentConversationId(currentConversationId);
             const conversation = {
-              id: uuidv4(),
+              id: currentConversationId,
               timestamp,
               messages: [...messages],
             };
@@ -89,8 +88,10 @@ export const useChat = () => {
         });
       } else {
         const timestamp = new Date().toLocaleString();
+        const currentConversationId = uuidv4();
+        setCurrentConversationId(currentConversationId);
         const conversation = {
-          id: uuidv4(),
+          id: currentConversationId,
           timestamp,
           messages: [...messages],
         };
@@ -266,7 +267,7 @@ export const useChat = () => {
   };
 
   // 开始流式传输函数
-  const startStream = async () => {
+  const startStream = async (query, effort, model) => {
     if (!query.trim()) {
       setError("查询不能为空");
       return;
@@ -285,14 +286,17 @@ export const useChat = () => {
     try {
       abortControllerRef.current = new AbortController();
 
-      const response = await fetch("/llm/deep/search/stream", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ query, messages, effort, model }),
-        signal: abortControllerRef.current.signal,
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/llm/deep/search/stream`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ query, messages, effort, model }),
+          signal: abortControllerRef.current.signal,
+        }
+      );
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -334,8 +338,8 @@ export const useChat = () => {
   };
 
   // 处理提交事件
-  const handleSubmit = () => {
-    startStream();
+  const handleSubmit = (query, effort, model) => {
+    startStream(query, effort, model);
   };
 
   // 处理取消事件
@@ -346,7 +350,6 @@ export const useChat = () => {
   return {
     // State
     messages,
-    query,
     isStreaming,
     error,
     steps,
@@ -355,16 +358,11 @@ export const useChat = () => {
     drawerVisible,
     history,
     currentConversationId,
-    effort,
-    model,
     abortControllerRef,
     scrollAreaRef,
 
     // Actions
-    setQuery,
     setDrawerVisible,
-    setEffort,
-    setModel,
     handleSubmit,
     handleCancel,
     handleNewSearch,

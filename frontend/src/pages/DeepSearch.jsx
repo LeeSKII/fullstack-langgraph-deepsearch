@@ -105,12 +105,6 @@ const DeepSearch = () => {
               onCancel={handleCancel}
               liveActivityEvents={steps}
               onNewSearch={handleNewSearch}
-              query={query}
-              setQuery={setQuery}
-              effort={effort}
-              setEffort={setEffort}
-              model={model}
-              setModel={setModel}
               onRetry={handleRetry}
             />
           )}
